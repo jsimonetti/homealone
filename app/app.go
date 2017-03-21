@@ -105,7 +105,7 @@ func (app *App) Start() (err error) {
 	app.shutdownCh = make(chan struct{})
 	go app.discoverLoop()
 
-	app.Signal = make(chan os.Signal)
+	app.Signal = make(chan os.Signal, 1)
 	signal.Notify(app.Signal, syscall.SIGINT, syscall.SIGTERM)
 
 	return

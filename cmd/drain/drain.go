@@ -55,8 +55,13 @@ func main() {
 	}
 	cc.Subscribe(tq)
 
-	osSignal := make(chan os.Signal)
+	osSignal := make(chan os.Signal, 1)
 	signal.Notify(osSignal, syscall.SIGINT, syscall.SIGTERM)
+
+	defer func() {
+		cc.Disconnect()
+		conn.Close()
+	}()
 
 	for {
 		select {
@@ -70,11 +75,7 @@ func main() {
 			fmt.Print(m.TopicName, "\t")
 			spew.Dump(msg)
 		case <-osSignal:
-			goto end
+			return
 		}
 	}
-
-end:
-	cc.Disconnect()
-	conn.Close()
 }
