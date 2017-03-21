@@ -17,7 +17,7 @@ func main() {
 	app.SetHandler(messageHandler)
 	app.Start()
 
-	// wait for the interupt signal
+	// wait for the interrupt signal
 	app.Wait()
 
 	app.Stop()

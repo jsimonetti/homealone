@@ -31,7 +31,7 @@ func main() {
 	inventory.SetHandler(inventory.messageHandler)
 	inventory.Start()
 
-	// wait for the interupt signal
+	// wait for the interrupt signal
 	inventory.Wait()
 
 	// clean up
