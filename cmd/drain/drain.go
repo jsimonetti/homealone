@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/davecgh/go-spew/spew"
 	proto "github.com/huin/mqtt"
@@ -53,14 +55,26 @@ func main() {
 	}
 	cc.Subscribe(tq)
 
-	for m := range cc.Incoming {
-		msg, err := protocol.Unmarshal(m.Payload)
-		if err != nil {
-			logger.WithError(err).With(log.Fields{"topic": m.TopicName}).Print("unmarshal failed")
-			continue
-		}
+	osSignal := make(chan os.Signal)
+	signal.Notify(osSignal, syscall.SIGINT, syscall.SIGTERM)
 
-		fmt.Print(m.TopicName, "\t")
-		spew.Dump(msg)
+	for {
+		select {
+		case m := <-cc.Incoming:
+			msg, err := protocol.Unmarshal(m.Payload)
+			if err != nil {
+				logger.WithError(err).With(log.Fields{"topic": m.TopicName}).Print("unmarshal failed")
+				break
+			}
+
+			fmt.Print(m.TopicName, "\t")
+			spew.Dump(msg)
+		case <-osSignal:
+			goto end
+		}
 	}
+
+end:
+	cc.Disconnect()
+	conn.Close()
 }
