@@ -46,9 +46,13 @@ func Unmarshal(p mqtt.Payload) (m message.Message, err error) {
 		return nil, fmt.Errorf("protocol version mismatch; want: '%v', got '%v'", strings.TrimRight(string(version[:]), "\x00"), strings.TrimRight(string(v), "\x00"))
 	}
 
-	b, err := buf.ReadByte()
-	t := message.Type(b)
+	var b byte
+	b, err = buf.ReadByte()
+	if err != nil {
+		return
+	}
 
+	t := message.Type(b)
 	m, err = decodeMessage(t, buf)
 	return
 }
