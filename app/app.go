@@ -61,7 +61,7 @@ func NewApp(name string) (*App, error) {
 	return newApp("app." + name)
 }
 
-// NewDriver returns an app in the 'device' namespace
+// NewDriver returns an app in the 'driver' namespace
 func NewDriver(name string) (*App, error) {
 	return newApp("driver." + name)
 }
