@@ -5,8 +5,8 @@ import (
 	"bytes"
 	"encoding/gob"
 	"fmt"
+	"io"
 
-	"github.com/huin/mqtt"
 	"github.com/pkg/errors"
 
 	"github.com/jsimonetti/homealone/pkg/protocol/message"
@@ -40,7 +40,7 @@ func Marshal(m message.Message) ([]byte, error) {
 
 // Unmarshal will take the bytes from an mqtt.Payload and read them into a Buffer
 // The version is checked with the current version to see if it matches
-func Unmarshal(p mqtt.Payload) (m message.Message, err error) {
+func Unmarshal(p Payload) (m message.Message, err error) {
 	buf := &bytes.Buffer{}
 	p.WritePayload(buf)
 
@@ -101,4 +101,22 @@ func decodeMessage(t message.Type, buf *bytes.Buffer) (m message.Message, err er
 	}
 
 	return m, errors.Wrap(err, "gob.Decode failed")
+}
+
+// Payload is the interface for Publish payloads.
+type Payload interface {
+	// Size returns the number of bytes that WritePayload will write.
+	Size() int
+
+	// WritePayload writes the payload data to w. Implementations must write
+	// Size() bytes of data, but it is *not* required to do so prior to
+	// returning. Size() bytes must have been written to w prior to another
+	// message being encoded to the underlying connection.
+	WritePayload(w io.Writer) error
+
+	// ReadPayload reads the payload data from r (r will EOF at the end of the
+	// payload). It is *not* required for r to have been consumed prior to this
+	// returning. r must have been consumed completely prior to another message
+	// being decoded from the underlying connection.
+	ReadPayload(r io.Reader) error
 }
