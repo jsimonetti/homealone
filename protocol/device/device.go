@@ -7,5 +7,17 @@ import uuid "github.com/satori/go.uuid"
 // UUID should be created deterministically in a way
 // so that each startup the device gets the same uuid. (uuid.NewV5() helps here)
 type Device struct {
-	ID uuid.UUID
+	ID         uuid.UUID
+	Name       string
+	Components []Component
 }
+
+type Component interface {
+	component()
+}
+
+type Toggle struct {
+	Name string
+}
+
+func (Toggle) component() {}

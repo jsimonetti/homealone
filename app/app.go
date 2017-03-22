@@ -145,9 +145,10 @@ func (app *App) Publish(topic queue.Topic, m message.Message) {
 }
 
 // DiscoverReply replies to a Discover message.
-func (app *App) DiscoverReply() {
-	m := &message.DiscoverReply{}
+func (app *App) DiscoverReply(to uuid.UUID) {
+	m := &message.Register{}
 	m.Source = app.ID
+	m.For = to
 	m.Name = app.Name
 	m.Devices = app.Devices
 
@@ -212,15 +213,19 @@ func (app *App) discoverLoop() {
 				app.Log.WithError(err).With(log.Fields{"topic": m.TopicName}).Print("unmarshal failed")
 				break
 			}
-			app.Log.With(log.Fields{"topic": m.TopicName, "source": msg.From().String(), "type": msg.Type().String()}).Print("received message")
-			if m.TopicName == queue.Inventory.String() {
-				if msg.Type() == message.TypeDiscover {
-					app.DiscoverReply()
-					break
+			app.Log.With(log.Fields{"topic": m.TopicName, "destination": msg.To().String(), "source": msg.From().String(), "type": msg.Type().String()}).Print("received message")
+
+			// only reply to broadcasts or msgs directed to me
+			if uuid.Equal(msg.To(), app.ID) || msg.To() == uuid.Nil {
+				if m.TopicName == queue.Inventory.String() {
+					if msg.Type() == message.TypeDiscover {
+						app.DiscoverReply(msg.From())
+						break
+					}
 				}
-			}
-			if err := app.handler(m.TopicName, msg); err != nil {
-				app.Log.WithError(err).Print("handler error")
+				if err := app.handler(m.TopicName, msg); err != nil {
+					app.Log.WithError(err).Print("handler error")
+				}
 			}
 		}
 	}

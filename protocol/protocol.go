@@ -7,6 +7,7 @@ import (
 	"fmt"
 
 	"github.com/huin/mqtt"
+	"github.com/jsimonetti/homealone/protocol/device"
 	"github.com/jsimonetti/homealone/protocol/message"
 	"github.com/pkg/errors"
 )
@@ -75,11 +76,6 @@ func decodeMessage(t message.Type, buf *bytes.Buffer) (m message.Message, err er
 		err = dec.Decode(&msg)
 		m = msg
 
-	case message.TypeDiscoverReply:
-		msg := &message.DiscoverReply{}
-		err = dec.Decode(&msg)
-		m = msg
-
 	case message.TypeRegister:
 		msg := &message.Register{}
 		err = dec.Decode(&msg)
@@ -95,4 +91,8 @@ func decodeMessage(t message.Type, buf *bytes.Buffer) (m message.Message, err er
 	}
 
 	return m, errors.Wrap(err, "gob.Decode failed")
+}
+
+func init() {
+	gob.Register(device.Toggle{})
 }
