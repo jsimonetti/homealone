@@ -106,7 +106,9 @@ func (app *App) Start() (err error) {
 		return errors.Wrap(err, "connect failed")
 	}
 
-	app.Log.With(log.Fields{"client_id": app.Broker.ClientId}).Print("client connected")
+	if app.debug {
+		app.Log.With(log.Fields{"client_id": app.Broker.ClientId}).Print("client connected")
+	}
 
 	app.RegisterAll(uuid.Nil)
 
@@ -125,7 +127,9 @@ func (app *App) Stop() {
 	app.UnregisterAll(uuid.Nil)
 	close(app.shutdownCh)
 	app.wg.Wait()
-	app.Log.With(log.Fields{"client_id": app.Broker.ClientId}).Print("client disconnected")
+	if app.debug {
+		app.Log.With(log.Fields{"client_id": app.Broker.ClientId}).Print("client disconnected")
+	}
 	app.Broker.Disconnect()
 	app.conn.Close()
 }
@@ -143,7 +147,9 @@ func (app *App) Publish(topic queue.Topic, m message.Message) {
 		return
 	}
 
-	app.Log.With(log.Fields{"topic": topic.String(), "destination": m.To().String(), "source": m.From().String(), "type": m.Type().String()}).Print("sent message")
+	if app.debug {
+		app.Log.With(log.Fields{"topic": topic.String(), "destination": m.To().String(), "source": m.From().String(), "type": m.Type().String()}).Print("sent message")
+	}
 
 	app.Broker.Publish(&proto.Publish{
 		Header:    proto.Header{},
@@ -238,7 +244,10 @@ func (app *App) discoverLoop() {
 				app.Log.WithError(err).With(log.Fields{"topic": m.TopicName}).Print("unmarshal failed")
 				break
 			}
-			app.Log.With(log.Fields{"topic": m.TopicName, "destination": msg.To().String(), "source": msg.From().String(), "type": msg.Type().String()}).Print("received message")
+
+			if app.debug {
+				app.Log.With(log.Fields{"topic": m.TopicName, "destination": msg.To().String(), "source": msg.From().String(), "type": msg.Type().String()}).Print("received message")
+			}
 
 			// only reply to broadcasts or msgs directed to me
 			if uuid.Equal(msg.To(), app.ID) || msg.To() == uuid.Nil {
