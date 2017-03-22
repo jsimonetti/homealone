@@ -106,9 +106,7 @@ func (app *App) Start() (err error) {
 		return errors.Wrap(err, "connect failed")
 	}
 
-	if app.debug {
-		app.Log.With(log.Fields{"client_id": app.Broker.ClientId}).Print("client connected")
-	}
+	app.Log.With(log.Fields{"client_id": app.Broker.ClientId}).Print("client started")
 
 	app.RegisterAll(uuid.Nil)
 
@@ -127,9 +125,7 @@ func (app *App) Stop() {
 	app.UnregisterAll(uuid.Nil)
 	close(app.shutdownCh)
 	app.wg.Wait()
-	if app.debug {
-		app.Log.With(log.Fields{"client_id": app.Broker.ClientId}).Print("client disconnected")
-	}
+	app.Log.With(log.Fields{"client_id": app.Broker.ClientId}).Print("client stopped")
 	app.Broker.Disconnect()
 	app.conn.Close()
 }
