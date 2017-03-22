@@ -14,8 +14,8 @@ type Fields map[string]interface{}
 // Logger is the interface for a logger
 type Logger interface {
 	logrus.StdLogger
-	With(fields Fields) *logger
-	WithError(err error) *logger
+	With(fields Fields) Logger
+	WithError(err error) Logger
 }
 
 type logger struct {
@@ -50,12 +50,12 @@ func NewLogger() Logger {
 }
 
 // With will add the fields to the formatted log entry
-func (l *logger) With(fields Fields) *logger {
+func (l *logger) With(fields Fields) Logger {
 	return &logger{Entry: l.WithFields(logrus.Fields(fields))}
 }
 
 // WithError will add the error to the fields
-func (l *logger) WithError(err error) *logger {
+func (l *logger) WithError(err error) Logger {
 	_, f, line, ok := runtime.Caller(1)
 	file := strings.SplitAfter(f, "/homealone/")
 	if ok {
