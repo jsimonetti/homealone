@@ -5,14 +5,21 @@ import (
 	"bytes"
 	"encoding/gob"
 	"fmt"
-	"strings"
 
 	"github.com/huin/mqtt"
 	"github.com/jsimonetti/homealone/protocol/message"
+	"github.com/pkg/errors"
 )
 
 // version is the current version of the protocol
 var version = [8]byte{'h', 'a', '-', '1'}
+
+// errVersionMismatch is thrown when the protocol versions do not match
+const errVersionMismatch = protoError("Protocol version mismatch")
+
+type protoError string
+
+func (e protoError) Error() string { return string(e) }
 
 // Marshal will marshal a Message into bytes
 // The version and message type are prepended onto the binary data
@@ -23,7 +30,7 @@ func Marshal(m message.Message) ([]byte, error) {
 	enc := gob.NewEncoder(&buf)
 	err := enc.Encode(m)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "marshal failed")
 	}
 
 	b := append(version[:], uint8(m.Type()))
@@ -39,22 +46,22 @@ func Unmarshal(p mqtt.Payload) (m message.Message, err error) {
 	v := make([]byte, 8)
 	_, err = buf.Read(v)
 	if err != nil {
-		return
+		return nil, errors.Wrap(err, "read version failed")
 	}
 
 	if !bytes.Equal(version[:], v) {
-		return nil, fmt.Errorf("protocol version mismatch; want: '%v', got '%v'", strings.TrimRight(string(version[:]), "\x00"), strings.TrimRight(string(v), "\x00"))
+		return nil, errVersionMismatch
 	}
 
 	var b byte
 	b, err = buf.ReadByte()
 	if err != nil {
-		return
+		return nil, errors.Wrap(err, "read message type failed")
 	}
 
 	t := message.Type(b)
 	m, err = decodeMessage(t, buf)
-	return
+	return m, errors.Wrap(err, "decodeMessage failed")
 }
 
 // decodeMessage will decode the bytes from the buffer according to the type.
@@ -87,5 +94,5 @@ func decodeMessage(t message.Type, buf *bytes.Buffer) (m message.Message, err er
 		return nil, fmt.Errorf("unknown messagetype found; type: %s", t.String())
 	}
 
-	return
+	return m, errors.Wrap(err, "gob.Decode failed")
 }
