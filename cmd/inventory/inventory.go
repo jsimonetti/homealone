@@ -6,7 +6,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/davecgh/go-spew/spew"
 	uuid "github.com/satori/go.uuid"
 
 	"github.com/jsimonetti/homealone/pkg/app"
@@ -87,23 +86,26 @@ func (app *InventoryApp) discoverLoop() {
 }
 
 // inventoryReply will send the inventory of devices to the requester
-func (app *InventoryApp) inventoryReply(to uuid.UUID) {
+func (app *InventoryApp) inventoryReply(to uuid.UUID) error {
 	m := &message.InventoryReply{}
 	m.Source = app.ID
 	m.For = to
 	m.Devices = app.DeviceList()
 
 	app.Publish(queue.Inventory, m)
+	return nil
 }
 
 // registerDevice will register the devices to the inventory
-func (app *InventoryApp) registerDevice(m *message.Register) {
+func (app *InventoryApp) registerDevice(m *message.Register) error {
 	app.Register(m.Devices...)
+	return nil
 }
 
 // unregisterDevice will unregister the devices from the inventory
-func (app *InventoryApp) unregisterDevice(m *message.Unregister) {
+func (app *InventoryApp) unregisterDevice(m *message.Unregister) error {
 	app.Unregister(m.Devices...)
+	return nil
 }
 
 // messageHandler is the handler to deal with messages
@@ -112,14 +114,11 @@ func (app *InventoryApp) messageHandler(topic string, m message.Message) error {
 	case *message.Discover:
 		return fmt.Errorf("unhandled message type %s", m.Type().String())
 	case *message.Inventory:
-		app.inventoryReply(m.From())
+		return app.inventoryReply(m.From())
 	case *message.Register:
-		app.registerDevice(m)
+		return app.registerDevice(m)
 	case *message.Unregister:
-		app.unregisterDevice(m)
-	default:
-		fmt.Print(topic + "\t")
-		spew.Dump(m)
+		return app.unregisterDevice(m)
 	}
 	return nil
 }
