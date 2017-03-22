@@ -11,6 +11,7 @@ func main() {
 
 	app, err := app.NewDriver("dummy")
 	if err != nil {
+		print(err.Error() + "\n")
 		os.Exit(1)
 	}
 

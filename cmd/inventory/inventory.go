@@ -16,6 +16,7 @@ func main() {
 
 	app, err := app.NewCore("inventory")
 	if err != nil {
+		print(err.Error() + "\n")
 		os.Exit(1)
 	}
 	inventory := &InventoryApp{

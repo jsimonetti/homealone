@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"log"
 	"net"
 
 	"github.com/jeffallen/mqtt"
@@ -15,7 +14,7 @@ func main() {
 
 	l, err := net.Listen("tcp", *addr)
 	if err != nil {
-		log.Print("listen: ", err)
+		print(err.Error() + "\n")
 		return
 	}
 	svr := mqtt.NewServer(l)

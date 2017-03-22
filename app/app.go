@@ -10,6 +10,7 @@ import (
 
 	proto "github.com/huin/mqtt"
 	"github.com/jeffallen/mqtt"
+	"github.com/pkg/errors"
 	"github.com/satori/go.uuid"
 
 	"github.com/jsimonetti/homealone/logger"
@@ -79,7 +80,7 @@ func newApp(name string) (app *App, err error) {
 		debug:   *debug,
 	}
 	app.Log = log.NewLogger().With(log.Fields{"app": name, "id": app.ID})
-	return
+	return app, errors.Wrap(err, "newApp failed")
 }
 
 // Start starts this app. It connects to the message hub and registers devices.
@@ -88,14 +89,14 @@ func (app *App) Start() (err error) {
 	app.conn, err = net.Dial("tcp", *host)
 	if err != nil {
 		app.Log.WithError(err).Print("dial failed")
-		return
+		return errors.Wrap(err, "dial failed")
 	}
 
 	app.Broker = mqtt.NewClientConn(app.conn)
 
 	if err = app.Broker.Connect(*user, *pass); err != nil {
 		app.Log.WithError(err).Print("connect failed")
-		return
+		return errors.Wrap(err, "connect failed")
 	}
 
 	app.Log.With(log.Fields{"client_id": app.Broker.ClientId}).Print("client connected")
@@ -108,7 +109,7 @@ func (app *App) Start() (err error) {
 	app.Signal = make(chan os.Signal, 1)
 	signal.Notify(app.Signal, syscall.SIGINT, syscall.SIGTERM)
 
-	return
+	return errors.Wrap(err, "App start failed")
 }
 
 // Stop will stop this app. It will stop the discovery goroutine,
@@ -132,6 +133,7 @@ func (app *App) Publish(topic queue.Topic, m message.Message) {
 	b, err := protocol.Marshal(m)
 	if err != nil {
 		app.Log.WithError(err).Print("marshal failed")
+		return
 	}
 
 	app.Log.With(log.Fields{"topic": topic.String(), "source": m.From().String(), "type": m.Type().String()}).Print("sent message")
