@@ -21,12 +21,12 @@ func main() {
 	}
 	inventory := &ListInventoryApp{
 		App:               app,
-		inventoryInterval: 30 * time.Second,
+		inventoryInterval: 60 * time.Second,
 	}
 
 	// decrease discovers when debugging
 	if inventory.Debug() {
-		inventory.inventoryInterval = 5 * time.Second
+		inventory.inventoryInterval = 10 * time.Second
 	}
 
 	inventory.SetHandler(messageHandler)

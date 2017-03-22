@@ -7,6 +7,7 @@ import (
 	"os/signal"
 	"sync"
 	"syscall"
+	"time"
 
 	proto "github.com/huin/mqtt"
 	"github.com/jeffallen/mqtt"
@@ -34,6 +35,11 @@ func init() {
 	namespace, _ = uuid.FromString("efdaedf2-4485-499f-8a68-3eea088fa7ae")
 }
 
+type appDevice struct {
+	device   device.Device
+	lastSeen time.Time
+}
+
 // App is a helper to create a driver or application.
 // It takes away the burden of (un)registering devices at startup
 // and responding to discovery messages.
@@ -47,7 +53,7 @@ type App struct {
 	conn   net.Conn
 	Broker *mqtt.ClientConn
 
-	devices    []device.Device
+	devices    []appDevice
 	deviceLock sync.RWMutex
 
 	shutdownCh chan struct{}
@@ -163,12 +169,13 @@ func (app *App) Register(devices ...device.Device) {
 	for _, device := range devices {
 		found := false
 		for _, d := range app.devices {
-			if device.ID == d.ID {
+			if device.ID == d.device.ID {
+				d.lastSeen = time.Now()
 				found = true
 			}
 		}
 		if !found {
-			app.devices = append(app.devices, device)
+			app.devices = append(app.devices, appDevice{device: device, lastSeen: time.Now()})
 		}
 	}
 }
@@ -179,7 +186,7 @@ func (app *App) Unregister(devices ...device.Device) {
 	defer app.deviceLock.Unlock()
 	for _, device := range devices {
 		for i, d := range app.devices {
-			if device.ID == d.ID {
+			if device.ID == d.device.ID {
 				app.devices = append(app.devices[:i], app.devices[i+1:]...)
 			}
 		}
@@ -253,5 +260,22 @@ func (app *App) discoverLoop() {
 func (app *App) DeviceList() []device.Device {
 	app.deviceLock.RLock()
 	defer app.deviceLock.RUnlock()
-	return app.devices
+	devices := []device.Device{}
+	for _, d := range app.devices {
+		devices = append(devices, d.device)
+	}
+	return devices
+}
+
+// GCDeviceList will remove all devices older then time t
+func (app *App) GCDeviceList(t time.Time) {
+	app.deviceLock.Lock()
+	defer app.deviceLock.Unlock()
+start:
+	for i, d := range app.devices {
+		if d.lastSeen.Before(t) {
+			app.devices = append(app.devices[:i], app.devices[i+1:]...)
+			goto start
+		}
+	}
 }

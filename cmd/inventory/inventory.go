@@ -65,6 +65,7 @@ func (app *InventoryApp) Start() {
 	go app.discoverLoop()
 }
 
+// discoverLoop periodically asks for all devices and GC's stale devices
 func (app *InventoryApp) discoverLoop() {
 	app.wg.Add(1)
 	timer := time.NewTicker(app.discoverInterval)
@@ -80,6 +81,7 @@ func (app *InventoryApp) discoverLoop() {
 
 		case <-timer.C:
 			app.Publish(queue.Inventory, m)
+			app.GCDeviceList(time.Now().Add(3 * app.discoverInterval))
 		}
 	}
 }
@@ -94,10 +96,12 @@ func (app *InventoryApp) inventoryReply(to uuid.UUID) {
 	app.Publish(queue.Inventory, m)
 }
 
+// registerDevice will register the devices to the inventory
 func (app *InventoryApp) registerDevice(m *message.Register) {
 	app.Register(m.Devices...)
 }
 
+// unregisterDevice will unregister the devices from the inventory
 func (app *InventoryApp) unregisterDevice(m *message.Unregister) {
 	app.Unregister(m.Devices...)
 }
