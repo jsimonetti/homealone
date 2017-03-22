@@ -8,7 +8,8 @@ type Type uint8
 // These constants define the different message types.
 const (
 	TypeDiscover Type = iota
-	TypeDiscoverReply
 	TypeRegister
 	TypeUnregister
+	TypeInventory
+	TypeInventoryReply
 )

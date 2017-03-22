@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/davecgh/go-spew/spew"
+	uuid "github.com/satori/go.uuid"
 
 	"github.com/jsimonetti/homealone/pkg/app"
 	"github.com/jsimonetti/homealone/pkg/protocol/message"
@@ -83,11 +84,35 @@ func (app *InventoryApp) discoverLoop() {
 	}
 }
 
+// inventoryReply will send the inventory of devices to the requester
+func (app *InventoryApp) inventoryReply(to uuid.UUID) {
+	m := &message.InventoryReply{}
+	m.Source = app.ID
+	m.For = to
+	m.Devices = app.DeviceList()
+
+	app.Publish(queue.Inventory, m)
+}
+
+func (app *InventoryApp) registerDevice(m *message.Register) {
+	app.Register(m.Devices...)
+}
+
+func (app *InventoryApp) unregisterDevice(m *message.Unregister) {
+	app.Unregister(m.Devices...)
+}
+
 // messageHandler is the handler to deal with messages
 func (app *InventoryApp) messageHandler(topic string, m message.Message) error {
-	switch m.Type() {
-	case message.TypeDiscover:
+	switch m := m.(type) {
+	case *message.Discover:
 		return fmt.Errorf("unhandled message type %s", m.Type().String())
+	case *message.Inventory:
+		app.inventoryReply(m.From())
+	case *message.Register:
+		app.registerDevice(m)
+	case *message.Unregister:
+		app.unregisterDevice(m)
 	default:
 		fmt.Print(topic + "\t")
 		spew.Dump(m)

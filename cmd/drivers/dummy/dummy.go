@@ -19,7 +19,7 @@ func main() {
 	}
 
 	app.SetHandler(messageHandler)
-	app.Register(fakeDevice())
+	app.Register(fakeDevice()...)
 	app.Start()
 
 	// wait for the interrupt signal

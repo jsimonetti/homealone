@@ -47,7 +47,8 @@ type App struct {
 	conn   net.Conn
 	Broker *mqtt.ClientConn
 
-	Devices []device.Device
+	devices    []device.Device
+	deviceLock sync.RWMutex
 
 	shutdownCh chan struct{}
 	Signal     chan os.Signal
@@ -156,8 +157,33 @@ func (app *App) Debug() bool {
 }
 
 // Register will set the devices controlled by this app.
-func (app *App) Register(devices []device.Device) {
-	app.Devices = append(app.Devices, devices...)
+func (app *App) Register(devices ...device.Device) {
+	app.deviceLock.Lock()
+	defer app.deviceLock.Unlock()
+	for _, device := range devices {
+		found := false
+		for _, d := range app.devices {
+			if device.ID == d.ID {
+				found = true
+			}
+		}
+		if !found {
+			app.devices = append(app.devices, device)
+		}
+	}
+}
+
+// Unregister will remove the devices from this app.
+func (app *App) Unregister(devices ...device.Device) {
+	app.deviceLock.Lock()
+	defer app.deviceLock.Unlock()
+	for _, device := range devices {
+		for i, d := range app.devices {
+			if device.ID == d.ID {
+				app.devices = append(app.devices[:i], app.devices[i+1:]...)
+			}
+		}
+	}
 }
 
 // RegisterAll will send the Register message to the inventory.
@@ -166,7 +192,7 @@ func (app *App) RegisterAll(to uuid.UUID) {
 	m.Source = app.ID
 	m.Name = app.Name
 	m.For = to
-	m.Devices = app.Devices
+	m.Devices = app.DeviceList()
 
 	app.Publish(queue.Inventory, m)
 }
@@ -178,7 +204,7 @@ func (app *App) UnregisterAll(to uuid.UUID) {
 	m.Source = app.ID
 	m.Name = app.Name
 	m.For = to
-	m.Devices = app.Devices
+	m.Devices = app.DeviceList()
 
 	app.Publish(queue.Inventory, m)
 }
@@ -221,4 +247,11 @@ func (app *App) discoverLoop() {
 			}
 		}
 	}
+}
+
+// DeviceList will return the list of devices
+func (app *App) DeviceList() []device.Device {
+	app.deviceLock.RLock()
+	defer app.deviceLock.RUnlock()
+	return app.devices
 }
