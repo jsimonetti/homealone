@@ -12,12 +12,7 @@ type Device struct {
 	Components []Component
 }
 
+// Component is an interface to device components
 type Component interface {
 	component()
 }
-
-type Toggle struct {
-	Name string
-}
-
-func (Toggle) component() {}
