@@ -1,7 +1,7 @@
 package message
 
 import (
-	"github.com/jsimonetti/homealone/protocol/device"
+	"github.com/jsimonetti/homealone/pkg/protocol/device"
 )
 
 // Used to make sure the interface is met

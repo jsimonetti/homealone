@@ -12,8 +12,8 @@ import (
 	proto "github.com/huin/mqtt"
 	"github.com/jeffallen/mqtt"
 
-	"github.com/jsimonetti/homealone/protocol"
-	"github.com/jsimonetti/homealone/protocol/queue"
+	"github.com/jsimonetti/homealone/pkg/protocol"
+	"github.com/jsimonetti/homealone/pkg/protocol/queue"
 )
 
 var host = flag.String("host", "localhost:1883", "hostname of broker")

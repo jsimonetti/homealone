@@ -1,8 +1,6 @@
 package device
 
-import (
-	"encoding/gob"
-)
+import "encoding/gob"
 
 // Used to make sure the interface is met
 var _ Component = &Slider{}

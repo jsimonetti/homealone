@@ -5,9 +5,9 @@ import (
 
 	uuid "github.com/satori/go.uuid"
 
-	"github.com/jsimonetti/homealone/app"
-	"github.com/jsimonetti/homealone/protocol/device"
-	"github.com/jsimonetti/homealone/protocol/message"
+	"github.com/jsimonetti/homealone/pkg/app"
+	"github.com/jsimonetti/homealone/pkg/protocol/device"
+	"github.com/jsimonetti/homealone/pkg/protocol/message"
 )
 
 func main() {

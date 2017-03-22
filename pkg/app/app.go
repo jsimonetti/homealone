@@ -13,11 +13,11 @@ import (
 	"github.com/pkg/errors"
 	"github.com/satori/go.uuid"
 
-	"github.com/jsimonetti/homealone/logger"
-	"github.com/jsimonetti/homealone/protocol"
-	"github.com/jsimonetti/homealone/protocol/device"
-	"github.com/jsimonetti/homealone/protocol/message"
-	"github.com/jsimonetti/homealone/protocol/queue"
+	"github.com/jsimonetti/homealone/pkg/logger"
+	"github.com/jsimonetti/homealone/pkg/protocol"
+	"github.com/jsimonetti/homealone/pkg/protocol/device"
+	"github.com/jsimonetti/homealone/pkg/protocol/message"
+	"github.com/jsimonetti/homealone/pkg/protocol/queue"
 )
 
 var host = flag.String("host", "localhost:1883", "hostname of broker")

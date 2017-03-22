@@ -7,8 +7,9 @@ import (
 	"fmt"
 
 	"github.com/huin/mqtt"
-	"github.com/jsimonetti/homealone/protocol/message"
 	"github.com/pkg/errors"
+
+	"github.com/jsimonetti/homealone/pkg/protocol/message"
 )
 
 // version is the current version of the protocol

@@ -8,9 +8,9 @@ import (
 
 	"github.com/davecgh/go-spew/spew"
 
-	"github.com/jsimonetti/homealone/app"
-	"github.com/jsimonetti/homealone/protocol/message"
-	"github.com/jsimonetti/homealone/protocol/queue"
+	"github.com/jsimonetti/homealone/pkg/app"
+	"github.com/jsimonetti/homealone/pkg/protocol/message"
+	"github.com/jsimonetti/homealone/pkg/protocol/queue"
 )
 
 func main() {

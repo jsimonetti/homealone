@@ -9,8 +9,8 @@ import (
 
 	uuid "github.com/satori/go.uuid"
 
-	"github.com/jsimonetti/homealone/protocol"
-	"github.com/jsimonetti/homealone/protocol/message"
+	"github.com/jsimonetti/homealone/pkg/protocol"
+	"github.com/jsimonetti/homealone/pkg/protocol/message"
 )
 
 func TestProtocol(t *testing.T) {
