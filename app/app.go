@@ -101,7 +101,7 @@ func (app *App) Start() (err error) {
 
 	app.Log.With(log.Fields{"client_id": app.Broker.ClientId}).Print("client connected")
 
-	app.RegisterAll()
+	app.RegisterAll(uuid.Nil)
 
 	app.shutdownCh = make(chan struct{})
 	go app.discoverLoop()
@@ -115,7 +115,7 @@ func (app *App) Start() (err error) {
 // Stop will stop this app. It will stop the discovery goroutine,
 // disconnect from the message hub and close its connection.
 func (app *App) Stop() {
-	app.UnregisterAll()
+	app.UnregisterAll(uuid.Nil)
 	close(app.shutdownCh)
 	app.wg.Wait()
 	app.Log.With(log.Fields{"client_id": app.Broker.ClientId}).Print("client disconnected")
@@ -136,23 +136,13 @@ func (app *App) Publish(topic queue.Topic, m message.Message) {
 		return
 	}
 
-	app.Log.With(log.Fields{"topic": topic.String(), "source": m.From().String(), "type": m.Type().String()}).Print("sent message")
+	app.Log.With(log.Fields{"topic": topic.String(), "destination": m.To().String(), "source": m.From().String(), "type": m.Type().String()}).Print("sent message")
+
 	app.Broker.Publish(&proto.Publish{
 		Header:    proto.Header{},
 		TopicName: topic.String(),
 		Payload:   proto.BytesPayload(b),
 	})
-}
-
-// DiscoverReply replies to a Discover message.
-func (app *App) DiscoverReply(to uuid.UUID) {
-	m := &message.Register{}
-	m.Source = app.ID
-	m.For = to
-	m.Name = app.Name
-	m.Devices = app.Devices
-
-	app.Publish(queue.Inventory, m)
 }
 
 // Wait will wait for an os.Signal to return
@@ -171,10 +161,11 @@ func (app *App) Register(device device.Device) {
 }
 
 // RegisterAll will send the Register message to the inventory.
-func (app *App) RegisterAll() {
+func (app *App) RegisterAll(to uuid.UUID) {
 	m := &message.Register{}
 	m.Source = app.ID
 	m.Name = app.Name
+	m.For = to
 	m.Devices = app.Devices
 
 	app.Publish(queue.Inventory, m)
@@ -182,10 +173,11 @@ func (app *App) RegisterAll() {
 
 // UnregisterAll will unregister all devices from the inventory.
 // This is usually done on shutdown.
-func (app *App) UnregisterAll() {
+func (app *App) UnregisterAll(to uuid.UUID) {
 	m := &message.Unregister{}
 	m.Source = app.ID
 	m.Name = app.Name
+	m.For = to
 	m.Devices = app.Devices
 
 	app.Publish(queue.Inventory, m)
@@ -219,7 +211,7 @@ func (app *App) discoverLoop() {
 			if uuid.Equal(msg.To(), app.ID) || msg.To() == uuid.Nil {
 				if m.TopicName == queue.Inventory.String() {
 					if msg.Type() == message.TypeDiscover {
-						app.DiscoverReply(msg.From())
+						app.RegisterAll(msg.From())
 						break
 					}
 				}

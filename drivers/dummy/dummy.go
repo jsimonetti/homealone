@@ -45,6 +45,11 @@ func fakeDevice() device.Device {
 			device.Toggle{
 				Name: "On/Off",
 			},
+			device.Slider{
+				Name: "Dimm",
+				Min:  0,
+				Max:  255,
+			},
 		},
 	}
 	return d

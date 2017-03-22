@@ -9,7 +9,8 @@ var _ Message = &Register{}
 
 // Register will register the supplied Devices with the inventory.
 // It is used by drivers to let the system know about devices.
-// It it only send at driver startup.
+// It is broadcasted at driver startup and unicasted to any
+// device requesting the information using a Discovery message.
 type Register struct {
 	Header
 	Name    string
