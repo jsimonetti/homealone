@@ -51,8 +51,6 @@ func fakeDevice() []device.Device {
 				},
 				device.Slider{
 					Name: "Dimm",
-					Min:  0,
-					Max:  255,
 				},
 			},
 		},
