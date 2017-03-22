@@ -16,6 +16,9 @@ import (
 	"github.com/jsimonetti/homealone/pkg/protocol/queue"
 )
 
+// Drain is a helper program that prints out all messages on all queueus.
+// It is for debugging purposes only
+
 var host = flag.String("host", "localhost:1883", "hostname of broker")
 var id = flag.String("id", "", "client id")
 var user = flag.String("user", "", "username")

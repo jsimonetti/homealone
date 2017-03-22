@@ -9,6 +9,8 @@ import (
 
 var addr = flag.String("addr", "localhost:1883", "listen address of broker")
 
+// Hub is the central MQTT broker to transport all messages.
+
 func main() {
 	flag.Parse()
 

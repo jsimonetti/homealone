@@ -13,6 +13,10 @@ import (
 	"github.com/jsimonetti/homealone/pkg/protocol/queue"
 )
 
+// Inventory is the application responsible for holding an inventory of all devices.
+// It respons only to Discover, Inventory, Register and
+// Unregister messages on the Inventory queue.
+
 func main() {
 
 	app, err := app.NewCore("inventory")

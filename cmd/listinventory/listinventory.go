@@ -12,6 +12,9 @@ import (
 	"github.com/jsimonetti/homealone/pkg/protocol/queue"
 )
 
+// listinventory is a helper program that periodically prints out the current inventory.
+// It is for debugging purposes only
+
 func main() {
 
 	app, err := app.NewCore("listinventory")

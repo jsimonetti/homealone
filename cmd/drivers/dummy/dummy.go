@@ -10,6 +10,9 @@ import (
 	"github.com/jsimonetti/homealone/pkg/protocol/message"
 )
 
+// The dummy driver is an example of a device driver.
+// It is for debugging purposes only. It inserts some fake devices into the inventory.
+
 func main() {
 
 	app, err := app.NewDriver("dummy")
