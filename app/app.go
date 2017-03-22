@@ -156,8 +156,8 @@ func (app *App) Debug() bool {
 }
 
 // Register will set the devices controlled by this app.
-func (app *App) Register(device device.Device) {
-	app.Devices = append(app.Devices, device)
+func (app *App) Register(devices []device.Device) {
+	app.Devices = append(app.Devices, devices...)
 }
 
 // RegisterAll will send the Register message to the inventory.

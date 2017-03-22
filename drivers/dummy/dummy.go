@@ -37,20 +37,34 @@ func messageHandler(topic string, m message.Message) error {
 	}
 }
 
-func fakeDevice() device.Device {
-	d := device.Device{
-		ID:   uuid.NewV4(),
-		Name: "Lamp",
-		Components: []device.Component{
-			device.Toggle{
-				Name: "On/Off",
+func fakeDevice() []device.Device {
+	devices := []device.Device{
+		device.Device{
+			ID:   uuid.NewV4(),
+			Name: "Lamp",
+			Components: []device.Component{
+				device.Toggle{
+					Name: "On/Off",
+				},
+				device.Slider{
+					Name: "Dimm",
+					Min:  0,
+					Max:  255,
+				},
 			},
-			device.Slider{
-				Name: "Dimm",
-				Min:  0,
-				Max:  255,
+		},
+		device.Device{
+			ID:   uuid.NewV4(),
+			Name: "Radio",
+			Components: []device.Component{
+				device.Toggle{
+					Name: "On/Off",
+				},
+				device.Rotary{
+					Name: "Volume",
+				},
 			},
 		},
 	}
-	return d
+	return devices
 }
