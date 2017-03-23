@@ -2,7 +2,6 @@ package app
 
 import (
 	"flag"
-	"fmt"
 	"net"
 	"os"
 	"os/signal"
@@ -277,7 +276,9 @@ func (app *App) messageLoop() {
 					}
 					break
 				}
-				fmt.Printf("no handler found\n")
+				if app.debug {
+					app.Log.With(log.Fields{"topic": m.TopicName}).Print("no handler found")
+				}
 			}
 		}
 	}
