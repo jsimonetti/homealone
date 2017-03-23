@@ -6,10 +6,10 @@ import (
 	"github.com/jsimonetti/homealone/pkg/protocol/device"
 )
 
-func fakeDevice() []device.Device {
+func (app *DriverApp) fakeDevice() []device.Device {
 	devices := []device.Device{
 		device.Device{
-			ID:   uuid.NewV5(namespace, "Lamp"),
+			ID:   uuid.NewV5(app.ID, "Lamp"),
 			Name: "Lamp",
 			Components: []device.Component{
 				device.Toggle{
@@ -21,7 +21,7 @@ func fakeDevice() []device.Device {
 			},
 		},
 		device.Device{
-			ID:   uuid.NewV5(namespace, "Radio"),
+			ID:   uuid.NewV5(app.ID, "Radio"),
 			Name: "Radio",
 			Components: []device.Component{
 				device.Toggle{

@@ -14,13 +14,6 @@ import (
 // The dummy driver is an example of a device driver.
 // It is for debugging purposes only. It inserts some fake devices into the inventory.
 
-// namespace contains a UUID for this driver
-var namespace uuid.UUID
-
-func init() {
-	namespace, _ = uuid.FromString("ffdaedf2-4485-499f-8a68-3eea088fa7ae")
-}
-
 func main() {
 
 	c, err := app.NewDriver("dummy")
@@ -33,7 +26,7 @@ func main() {
 		App: c,
 	}
 
-	app.Register(fakeDevice()...)
+	app.Register(app.fakeDevice()...)
 	app.SetHandler(queue.Command, app.commandHandler)
 	app.Start()
 
