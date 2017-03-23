@@ -265,10 +265,10 @@ func (app *App) messageLoop() {
 				app.Log.With(log.Fields{"topic": m.TopicName, "destination": msg.To().String(), "source": msg.From().String(), "type": msg.Type().String()}).Print("received message")
 			}
 
-			topic := queue.GetTopic(m.TopicName)
-
 			// only reply to broadcasts or msgs directed to me
 			if !app.filterMessages || msg.To() == uuid.Nil || uuid.Equal(msg.To(), app.ID) {
+				topic := queue.GetTopic(m.TopicName)
+
 				// get handler from the handler map
 				if handle, ok := app.handler[topic]; ok {
 					if err := handle(msg); err != nil {
@@ -276,6 +276,7 @@ func (app *App) messageLoop() {
 					}
 					break
 				}
+
 				if app.debug {
 					app.Log.With(log.Fields{"topic": m.TopicName}).Print("no handler found")
 				}
