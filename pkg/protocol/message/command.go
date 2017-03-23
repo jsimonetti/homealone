@@ -26,6 +26,8 @@ func (Command) message() {}
 // Used to make sure the interface is met
 var _ Message = &CommandReply{}
 
+// CommandReply is sent in response to a Command.
+// It contains the result of a command and an optional message
 type CommandReply struct {
 	Header
 	InReplyTo uuid.UUID
@@ -41,13 +43,15 @@ func (m *CommandReply) Finalize() {
 // message is an empty method to comply to the interface Message
 func (CommandReply) message() {}
 
+//go:generate stringer -type=CommandResult
+
 // CommandResult is used to signal the sending partner about the result of this command
 type CommandResult uint8
 
 const (
-	// CommandAck is used to acknowledge receipt of the command and successful execution
+	// CommandSyncAck is used to acknowledge receipt of the command and successful execution
 	CommandSyncAck CommandResult = iota
-	// CommandFail is used to acknowledge receipt of the command and unsuccessful execution
+	// CommandSyncFail is used to acknowledge receipt of the command and unsuccessful execution
 	CommandSyncFail
 	// CommandAsyncAck is used to acknowledge receipt of the command but immediate result is not available
 	// The caller should monitor the command queue to wait for the async result

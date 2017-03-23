@@ -241,7 +241,7 @@ func (app *App) messageLoop() {
 
 	// only subsribe to topics we have handlers for
 	var topics []proto.TopicQos
-	for topic, _ := range app.handler {
+	for topic := range app.handler {
 		topics = append(topics, proto.TopicQos{
 			Topic: topic.String(),
 			Qos:   proto.QosAtMostOnce,
