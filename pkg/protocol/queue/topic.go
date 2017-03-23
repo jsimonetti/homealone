@@ -1,6 +1,9 @@
 package queue
 
-import "strings"
+import (
+	"bytes"
+	"strings"
+)
 
 //go:generate stringer -type=Topic
 
@@ -41,6 +44,7 @@ func AllTopics() (t []Topic) {
 
 // GetTopic will return the topic for a topic string
 func GetTopic(topic string) Topic {
-	i := strings.Index(_Topic_name, topic)
+	c := strings.Index(_Topic_name, topic)
+	i := bytes.IndexByte(_Topic_index[:], uint8(c))
 	return Topic(i)
 }
