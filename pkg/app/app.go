@@ -2,6 +2,7 @@ package app
 
 import (
 	"flag"
+	"fmt"
 	"net"
 	"os"
 	"os/signal"
@@ -48,7 +49,8 @@ type App struct {
 	Log  log.Logger
 	Name string
 
-	debug bool
+	debug          bool
+	filterMessages bool
 
 	conn   net.Conn
 	Broker *mqtt.ClientConn
@@ -81,13 +83,20 @@ func NewCore(name string) (*App, error) {
 // newApp returns an app
 func newApp(name string) (app *App, err error) {
 	app = &App{
-		Name:    name,
-		ID:      uuid.NewV5(namespace, "org.homealone."+name),
-		handler: make(map[queue.Topic]message.Handler),
-		debug:   *debug,
+		Name:           name,
+		ID:             uuid.NewV5(namespace, "org.homealone."+name),
+		handler:        make(map[queue.Topic]message.Handler),
+		debug:          *debug,
+		filterMessages: true,
 	}
 	app.Log = log.NewLogger().With(log.Fields{"app": name, "id": app.ID})
 	return app, errors.Wrap(err, "newApp failed")
+}
+
+// FilterMessages allows the app to control automatic message filtering
+// By default messages are filtered
+func (app *App) FilterMessages(b bool) {
+	app.filterMessages = b
 }
 
 // Start starts this app. It connects to the message hub and registers devices.
@@ -260,7 +269,7 @@ func (app *App) messageLoop() {
 			topic := queue.GetTopic(m.TopicName)
 
 			// only reply to broadcasts or msgs directed to me
-			if uuid.Equal(msg.To(), app.ID) || msg.To() == uuid.Nil {
+			if !app.filterMessages || msg.To() == uuid.Nil || uuid.Equal(msg.To(), app.ID) {
 				// get handler from the handler map
 				if handle, ok := app.handler[topic]; ok {
 					if err := handle(msg); err != nil {
@@ -268,6 +277,7 @@ func (app *App) messageLoop() {
 					}
 					break
 				}
+				fmt.Printf("no handler found\n")
 			}
 		}
 	}

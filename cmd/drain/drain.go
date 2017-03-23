@@ -1,78 +1,41 @@
 package main
 
 import (
-	"flag"
 	"fmt"
-	"net"
 	"os"
-	"os/signal"
-	"syscall"
+	"time"
 
 	"github.com/davecgh/go-spew/spew"
-	proto "github.com/huin/mqtt"
-	"github.com/jeffallen/mqtt"
-
-	"github.com/jsimonetti/homealone/pkg/protocol"
+	"github.com/jsimonetti/homealone/pkg/app"
+	"github.com/jsimonetti/homealone/pkg/protocol/message"
 	"github.com/jsimonetti/homealone/pkg/protocol/queue"
 )
 
 // Drain is a helper program that prints out all messages on all queueus.
 // It is for debugging purposes only
 
-var host = flag.String("host", "localhost:1883", "hostname of broker")
-var id = flag.String("id", "", "client id")
-var user = flag.String("user", "", "username")
-var pass = flag.String("pass", "", "password")
-var dump = flag.Bool("dump", false, "dump messages?")
-
 func main() {
-	flag.Parse()
 
-	conn, err := net.Dial("tcp", *host)
+	app, err := app.NewCore("drain")
 	if err != nil {
-		print(err.Error() + "\n")
-		return
-	}
-	cc := mqtt.NewClientConn(conn)
-	cc.Dump = *dump
-	cc.ClientId = *id
-
-	if err := cc.Connect(*user, *pass); err != nil {
 		print(err.Error() + "\n")
 		os.Exit(1)
 	}
 
-	var tq []proto.TopicQos
-
+	// drain listens on all topics and usage the dumpHandler to dump all messages
 	for _, t := range queue.AllTopics() {
-		tq = append(tq, proto.TopicQos{
-			Topic: t.String(),
-			Qos:   proto.QosAtMostOnce,
-		})
+		app.SetHandler(t, dumpHandler)
 	}
-	cc.Subscribe(tq)
+	app.FilterMessages(false)
+	app.Start()
 
-	osSignal := make(chan os.Signal, 1)
-	signal.Notify(osSignal, syscall.SIGINT, syscall.SIGTERM)
+	// wait for the interrupt signal
+	app.Wait()
+}
 
-	defer func() {
-		cc.Disconnect()
-		conn.Close()
-	}()
-
-	for {
-		select {
-		case m := <-cc.Incoming:
-			msg, err := protocol.Unmarshal(m.Payload)
-			if err != nil {
-				print(err.Error() + "\n")
-				break
-			}
-
-			fmt.Print(m.TopicName, "\t")
-			spew.Dump(msg)
-		case <-osSignal:
-			return
-		}
-	}
+// dumpHandler is the handler to deal with all messages
+func dumpHandler(m message.Message) error {
+	fmt.Printf("%s\t", time.Now())
+	spew.Dump(m)
+	return nil
 }
