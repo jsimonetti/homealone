@@ -180,7 +180,7 @@ func (app *App) Register(devices ...device.Device) {
 	// we add a NoopHandler to the map to make the subscription work
 	// we only do this if no handler is allready registered
 	if _, ok := app.handler[queue.Inventory]; !ok {
-		app.SetHandler(queue.Inventory, app.discoveryHandler)
+		app.SetHandler(queue.Inventory, app.inventoryHandler)
 	}
 
 	app.deviceLock.Lock()
@@ -312,8 +312,10 @@ func NoopHandler(m message.Message) error {
 	return nil
 }
 
-// discoveryHandler is a function that noops for a specific message
-func (app *App) discoveryHandler(m message.Message) error {
-	app.RegisterAll(m.From())
+// inventoryHandler is a function that noops for a specific message
+func (app *App) inventoryHandler(m message.Message) error {
+	if m.Type() == message.TypeDiscover {
+		app.RegisterAll(m.From())
+	}
 	return nil
 }
