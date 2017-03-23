@@ -9,8 +9,9 @@ import (
 func (app *DriverApp) fakeDevice() []device.Device {
 	devices := []device.Device{
 		device.Device{
-			ID:   uuid.NewV5(app.ID, "Lamp"),
-			Name: "Lamp",
+			ID:    uuid.NewV5(app.ID, "Lamp"),
+			Owner: app.ID,
+			Name:  "Lamp",
 			Components: []device.Component{
 				device.Toggle{
 					Name: "On/Off",
@@ -21,8 +22,9 @@ func (app *DriverApp) fakeDevice() []device.Device {
 			},
 		},
 		device.Device{
-			ID:   uuid.NewV5(app.ID, "Radio"),
-			Name: "Radio",
+			ID:    uuid.NewV5(app.ID, "Radio"),
+			Owner: app.ID,
+			Name:  "Radio",
 			Components: []device.Component{
 				device.Toggle{
 					Name: "On/Off",

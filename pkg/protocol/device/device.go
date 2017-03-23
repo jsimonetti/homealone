@@ -8,6 +8,7 @@ import uuid "github.com/satori/go.uuid"
 // so that each startup the device gets the same uuid. (uuid.NewV5() helps here)
 type Device struct {
 	ID         uuid.UUID
+	Owner      uuid.UUID
 	Name       string
 	Components []Component
 }
