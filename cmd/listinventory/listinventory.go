@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"os"
 	"sync"
 	"time"
@@ -32,7 +31,7 @@ func main() {
 		inventory.inventoryInterval = 10 * time.Second
 	}
 
-	inventory.SetHandler(messageHandler)
+	inventory.SetHandler(queue.Inventory, inventoryHandler)
 	inventory.Start()
 
 	// wait for the interrupt signal
@@ -83,12 +82,11 @@ func (app *ListInventoryApp) inventoryLoop() {
 	}
 }
 
-// messageHandler is the handler to deal with all messages
+// inventoryHandler is the handler to deal with all messages
 // except Discover (those are handled in the app framework)
-func messageHandler(topic string, m message.Message) error {
+func inventoryHandler(m message.Message) error {
 	switch m := m.(type) {
 	case *message.InventoryReply:
-		fmt.Print(topic + "\t")
 		spew.Dump(m)
 	}
 	return nil

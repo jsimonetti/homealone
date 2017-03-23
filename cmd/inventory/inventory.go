@@ -34,7 +34,7 @@ func main() {
 		inventory.discoverInterval = 5 * time.Second
 	}
 
-	inventory.SetHandler(inventory.messageHandler)
+	inventory.SetHandler(queue.Inventory, inventory.messageHandler)
 	inventory.Start()
 
 	// wait for the interrupt signal
@@ -113,7 +113,7 @@ func (app *InventoryApp) unregisterDevice(m *message.Unregister) error {
 }
 
 // messageHandler is the handler to deal with messages
-func (app *InventoryApp) messageHandler(topic string, m message.Message) error {
+func (app *InventoryApp) messageHandler(m message.Message) error {
 	switch m := m.(type) {
 	case *message.Discover:
 		return fmt.Errorf("unhandled message type %s", m.Type().String())

@@ -59,7 +59,7 @@ type App struct {
 	shutdownCh chan struct{}
 	Signal     chan os.Signal
 
-	handler message.Handler
+	handler map[queue.Topic]message.Handler
 	wg      sync.WaitGroup
 }
 
@@ -83,7 +83,7 @@ func newApp(name string) (app *App, err error) {
 	app = &App{
 		Name:    name,
 		ID:      uuid.NewV5(namespace, "org.homealone."+name),
-		handler: func(t string, m message.Message) error { return nil },
+		handler: make(map[queue.Topic]message.Handler),
 		debug:   *debug,
 	}
 	app.Log = log.NewLogger().With(log.Fields{"app": name, "id": app.ID})
@@ -111,7 +111,7 @@ func (app *App) Start() (err error) {
 	app.RegisterAll(uuid.Nil)
 
 	app.shutdownCh = make(chan struct{})
-	go app.discoverLoop()
+	go app.messageLoop()
 
 	app.Signal = make(chan os.Signal, 1)
 	signal.Notify(app.Signal, syscall.SIGINT, syscall.SIGTERM)
@@ -131,8 +131,8 @@ func (app *App) Stop() {
 }
 
 // SetHandler will set the message handler
-func (app *App) SetHandler(handler message.Handler) {
-	app.handler = handler
+func (app *App) SetHandler(topic queue.Topic, handler message.Handler) {
+	app.handler[topic] = handler
 }
 
 // Publish will send a message to the specified topic.
@@ -166,6 +166,14 @@ func (app *App) Debug() bool {
 
 // Register will set the devices controlled by this app.
 func (app *App) Register(devices ...device.Device) {
+	// we are registering devices, we should also register for
+	// discovery messages, but they are handled in the app.
+	// we add a NoopHandler to the map to make the subscription work
+	// we only do this if no handler is allready registered
+	if _, ok := app.handler[queue.Inventory]; !ok {
+		app.SetHandler(queue.Inventory, app.discoveryHandler)
+	}
+
 	app.deviceLock.Lock()
 	defer app.deviceLock.Unlock()
 	for _, device := range devices {
@@ -218,15 +226,19 @@ func (app *App) UnregisterAll(to uuid.UUID) {
 	app.Publish(queue.Inventory, m)
 }
 
-// discoverLoop is the goroutine that replies to Discover messages
-func (app *App) discoverLoop() {
+// messageLoop is the goroutine that receives messages
+func (app *App) messageLoop() {
 	app.wg.Add(1)
-	app.Broker.Subscribe([]proto.TopicQos{
-		proto.TopicQos{
-			Topic: queue.Inventory.String(),
+
+	// only subsribe to topics we have handlers for
+	var topics []proto.TopicQos
+	for topic, _ := range app.handler {
+		topics = append(topics, proto.TopicQos{
+			Topic: topic.String(),
 			Qos:   proto.QosAtMostOnce,
-		},
-	})
+		})
+	}
+	app.Broker.Subscribe(topics)
 
 	for {
 		select {
@@ -245,16 +257,16 @@ func (app *App) discoverLoop() {
 				app.Log.With(log.Fields{"topic": m.TopicName, "destination": msg.To().String(), "source": msg.From().String(), "type": msg.Type().String()}).Print("received message")
 			}
 
+			topic := queue.GetTopic(m.TopicName)
+
 			// only reply to broadcasts or msgs directed to me
 			if uuid.Equal(msg.To(), app.ID) || msg.To() == uuid.Nil {
-				if m.TopicName == queue.Inventory.String() {
-					if msg.Type() == message.TypeDiscover {
-						app.RegisterAll(msg.From())
-						break
+				// get handler from the handler map
+				if handle, ok := app.handler[topic]; ok {
+					if err := handle(msg); err != nil {
+						app.Log.WithError(err).Print("handler error")
 					}
-				}
-				if err := app.handler(m.TopicName, msg); err != nil {
-					app.Log.WithError(err).Print("handler error")
+					break
 				}
 			}
 		}
@@ -283,4 +295,15 @@ start:
 			goto start
 		}
 	}
+}
+
+// NoopHandler is a function that noops for a specific message
+func NoopHandler(m message.Message) error {
+	return nil
+}
+
+// discoveryHandler is a function that noops for a specific message
+func (app *App) discoveryHandler(m message.Message) error {
+	app.RegisterAll(m.From())
+	return nil
 }

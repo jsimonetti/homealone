@@ -3,11 +3,13 @@ package main
 import (
 	"os"
 
+	"github.com/davecgh/go-spew/spew"
 	uuid "github.com/satori/go.uuid"
 
 	"github.com/jsimonetti/homealone/pkg/app"
 	"github.com/jsimonetti/homealone/pkg/protocol/device"
 	"github.com/jsimonetti/homealone/pkg/protocol/message"
+	"github.com/jsimonetti/homealone/pkg/protocol/queue"
 )
 
 // The dummy driver is an example of a device driver.
@@ -21,7 +23,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	app.SetHandler(messageHandler)
+	app.SetHandler(queue.Command, commandHandler)
 	app.Register(fakeDevice()...)
 	app.Start()
 
@@ -31,11 +33,12 @@ func main() {
 	app.Stop()
 }
 
-// messageHandler is the handler to deal with all messages
-// except Discover (those are handled in the app framework)
-func messageHandler(topic string, m message.Message) error {
+// commandHandler is the handler to deal with all messages
+// from the command queue
+func commandHandler(m message.Message) error {
 	switch m.Type() {
 	default:
+		spew.Dump(m)
 		return nil
 	}
 }

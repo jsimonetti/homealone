@@ -12,4 +12,6 @@ const (
 	TypeUnregister
 	TypeInventory
 	TypeInventoryReply
+	TypeCommand
+	TypeCommandReply
 )

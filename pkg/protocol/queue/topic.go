@@ -1,5 +1,7 @@
 package queue
 
+import "strings"
+
 //go:generate stringer -type=Topic
 
 // Topic is a topic used on the hub
@@ -35,4 +37,10 @@ func AllTopics() (t []Topic) {
 		t = append(t, Topic(i))
 	}
 	return
+}
+
+// GetTopic will return the topic for a topic string
+func GetTopic(topic string) Topic {
+	i := strings.Index(_Topic_name, topic)
+	return Topic(i)
 }

@@ -1,6 +1,8 @@
 package message
 
-import uuid "github.com/satori/go.uuid"
+import (
+	uuid "github.com/satori/go.uuid"
+)
 
 // Header is the header of a message. It contains the message type and
 // the source of the message.
@@ -35,4 +37,4 @@ type Message interface {
 }
 
 // Handler is used by the app framework to register a callback function
-type Handler func(topic string, m Message) error
+type Handler func(m Message) error
