@@ -13,7 +13,7 @@ import (
 	"github.com/jsimonetti/homealone/pkg/protocol/queue"
 )
 
-// Drain is a helper program that prints out all messages on all queueus.
+// Command is a helper program that sends a command to the dummy driver
 // It is for debugging purposes only
 
 func main() {
@@ -28,7 +28,6 @@ func main() {
 		App: c,
 	}
 
-	// drain listens on all topics and usage the dumpHandler to dump all messages
 	app.SetHandler(queue.Command, commandHandler)
 	app.Start()
 
