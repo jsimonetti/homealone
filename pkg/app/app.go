@@ -1,6 +1,7 @@
 package app
 
 import (
+	"bytes"
 	"flag"
 	"net"
 	"os"
@@ -18,7 +19,6 @@ import (
 
 	"github.com/jsimonetti/homealone/pkg/logger"
 	"github.com/jsimonetti/homealone/pkg/protocol"
-	"github.com/jsimonetti/homealone/pkg/protocol/device"
 	"github.com/jsimonetti/homealone/pkg/protocol/message"
 	"github.com/jsimonetti/homealone/pkg/protocol/queue"
 )
@@ -38,7 +38,7 @@ func init() {
 }
 
 type appDevice struct {
-	device   device.Device
+	device   *message.Device
 	lastSeen time.Time
 }
 
@@ -56,7 +56,7 @@ type App struct {
 	conn   net.Conn
 	Broker *mqtt.ClientConn
 
-	devices    []appDevice
+	devices    []*appDevice
 	deviceLock sync.RWMutex
 
 	shutdownCh chan struct{}
@@ -175,7 +175,7 @@ func (app *App) Debug() bool {
 }
 
 // Register will set the devices controlled by this app.
-func (app *App) Register(devices ...device.Device) {
+func (app *App) Register(devices ...message.Device) {
 	// we are registering devices, we should also register for
 	// discovery messages, but they are handled in the app.
 	// we add a NoopHandler to the map to make the subscription work
@@ -189,24 +189,24 @@ func (app *App) Register(devices ...device.Device) {
 	for _, device := range devices {
 		found := false
 		for _, d := range app.devices {
-			if device.ID == d.device.ID {
+			if bytes.Equal(device.ID, d.device.ID) {
 				d.lastSeen = time.Now()
 				found = true
 			}
 		}
 		if !found {
-			app.devices = append(app.devices, appDevice{device: device, lastSeen: time.Now()})
+			app.devices = append(app.devices, &appDevice{device: &device, lastSeen: time.Now()})
 		}
 	}
 }
 
 // Unregister will remove the devices from this app.
-func (app *App) Unregister(devices ...device.Device) {
+func (app *App) Unregister(devices ...message.Device) {
 	app.deviceLock.Lock()
 	defer app.deviceLock.Unlock()
 	for _, device := range devices {
 		for i, d := range app.devices {
-			if device.ID == d.device.ID {
+			if bytes.Equal(device.ID, d.device.ID) {
 				app.devices = append(app.devices[:i], app.devices[i+1:]...)
 			}
 		}
@@ -215,10 +215,12 @@ func (app *App) Unregister(devices ...device.Device) {
 
 // RegisterAll will send the Register message to the inventory.
 func (app *App) RegisterAll(to uuid.UUID) {
-	m := &message.Register{}
-	m.Source = app.ID
-	m.Name = app.Name
-	m.For = to
+	m := &message.Register{
+		Header: &message.Header{},
+	}
+	m.Header.Mfrom = app.ID.Bytes()
+	m.Name = &app.Name
+	m.Header.Mto = to.Bytes()
 	m.Devices = app.DeviceList()
 
 	app.Publish(queue.Inventory, m)
@@ -227,10 +229,12 @@ func (app *App) RegisterAll(to uuid.UUID) {
 // UnregisterAll will unregister all devices from the inventory.
 // This is usually done on shutdown.
 func (app *App) UnregisterAll(to uuid.UUID) {
-	m := &message.Unregister{}
-	m.Source = app.ID
-	m.Name = app.Name
-	m.For = to
+	m := &message.Unregister{
+		Header: &message.Header{},
+	}
+	m.Header.Mfrom = app.ID.Bytes()
+	m.Name = &app.Name
+	m.Header.Mto = to.Bytes()
 	m.Devices = app.DeviceList()
 
 	app.Publish(queue.Inventory, m)
@@ -276,10 +280,10 @@ func (app *App) messageLoop() {
 }
 
 // DeviceList will return the list of devices
-func (app *App) DeviceList() []device.Device {
+func (app *App) DeviceList() []*message.Device {
 	app.deviceLock.RLock()
 	defer app.deviceLock.RUnlock()
-	devices := []device.Device{}
+	devices := []*message.Device{}
 	for _, d := range app.devices {
 		devices = append(devices, d.device)
 	}
@@ -321,7 +325,7 @@ func (app *App) mHandler(topic queue.Topic, msg message.Message) error {
 
 // inventoryHandler is a function that noops for a specific message
 func (app *App) inventoryHandler(m message.Message) error {
-	if m.Type() == message.TypeDiscover {
+	if m.Type() == message.Type_discover {
 		app.RegisterAll(m.From())
 	}
 	return nil
@@ -332,21 +336,22 @@ func (app *App) handleFilteredCommand(m message.Message) error {
 	case *message.Command:
 		// filter to only react on my devices
 		for _, device := range app.DeviceList() {
-			if uuid.Equal(m.Destination, device.ID) {
+			if bytes.Equal(m.Destination, device.ID) {
 				return app.handler[queue.Command](m)
 			}
 		}
 		// device not found, so if this was unicasted
 		// to us, we should reply
-		if uuid.Equal(m.For, app.ID) {
+		if uuid.Equal(m.To(), app.ID) {
+			msg := "no such device found"
 			reply := &message.CommandReply{
-				Header: message.Header{
-					Source: app.ID,
-					For:    m.Source,
+				Header: &message.Header{
+					Mfrom: app.ID.Bytes(),
+					Mto:   m.From().Bytes(),
 				},
 				InReplyTo: m.ID,
-				Result:    message.CommandSyncFail,
-				Message:   "no such device found",
+				Result:    message.CommandResult_Error.Enum(),
+				Message:   &msg,
 			}
 			app.Publish(queue.Command, reply)
 		}

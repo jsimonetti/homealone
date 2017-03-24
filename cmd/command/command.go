@@ -34,15 +34,18 @@ func main() {
 	driver, _ := uuid.FromString("ce0fc4f4-f62c-52c5-8747-e8c5035fdaed") // this is the dummy driver
 	//device, _ := uuid.FromString("42958300-8934-53a8-928f-e026531c2df8") // this is a non-existent device
 	device, _ := uuid.FromString("fc393d29-f160-5d95-88b0-c21e29b68a25") // this is the device radio on dummy driver
+
+	comp := "On/Off"
+	op := "Toggle"
 	cmd := &message.Command{
-		Header: message.Header{
-			For:    driver,
-			Source: app.ID,
+		Header: &message.Header{
+			Mto:   driver.Bytes(),
+			Mfrom: app.ID.Bytes(),
 		},
-		ID:          uuid.NewV4(),
-		Destination: device,
-		Component:   "On/Off",
-		Op:          "Toggle",
+		ID:          uuid.NewV4().Bytes(),
+		Destination: device.Bytes(),
+		Component:   &comp,
+		Op:          &op,
 	}
 	app.sendCommand(cmd)
 

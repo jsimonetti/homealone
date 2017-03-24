@@ -13,3 +13,6 @@ type Message interface {
 	Finalize()
 	message()
 }
+
+// Handler is used by the app framework to register a callback function
+type Handler func(m Message) error
