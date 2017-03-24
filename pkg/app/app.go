@@ -14,6 +14,8 @@ import (
 	"github.com/pkg/errors"
 	"github.com/satori/go.uuid"
 
+	"fmt"
+
 	"github.com/jsimonetti/homealone/pkg/logger"
 	"github.com/jsimonetti/homealone/pkg/protocol"
 	"github.com/jsimonetti/homealone/pkg/protocol/device"
@@ -265,21 +267,9 @@ func (app *App) messageLoop() {
 				app.Log.With(log.Fields{"topic": m.TopicName, "destination": msg.To().String(), "source": msg.From().String(), "type": msg.Type().String()}).Print("received message")
 			}
 
-			// only reply to broadcasts or msgs directed to me
-			if !app.filterMessages || msg.To() == uuid.Nil || uuid.Equal(msg.To(), app.ID) {
-				topic := queue.GetTopic(m.TopicName)
-
-				// get handler from the handler map
-				if handle, ok := app.handler[topic]; ok {
-					if err := handle(msg); err != nil {
-						app.Log.WithError(err).Print("handler error")
-					}
-					break
-				}
-
-				if app.debug {
-					app.Log.With(log.Fields{"topic": m.TopicName}).Print("no handler found")
-				}
+			err = app.mHandler(queue.GetTopic(m.TopicName), msg)
+			if err != nil {
+				app.Log.WithError(err).With(log.Fields{"topic": m.TopicName}).Print("message handle failed")
 			}
 		}
 	}
@@ -309,9 +299,24 @@ start:
 	}
 }
 
-// NoopHandler is a function that noops for a specific message
-func NoopHandler(m message.Message) error {
-	return nil
+// mHandler looks up the handler for the specified queue
+func (app *App) mHandler(topic queue.Topic, msg message.Message) error {
+	// only reply to broadcasts or msgs directed to me
+	if !app.filterMessages || msg.To() == uuid.Nil || uuid.Equal(msg.To(), app.ID) {
+		//
+		if topic == queue.Command && app.filterMessages {
+			return app.handleFilteredCommand(msg)
+		}
+		// get handler from the handler map
+		if handle, ok := app.handler[topic]; ok {
+			if err := handle(msg); err != nil {
+				return err
+			}
+			return nil
+		}
+
+	}
+	return fmt.Errorf("no handler found")
 }
 
 // inventoryHandler is a function that noops for a specific message
@@ -320,4 +325,32 @@ func (app *App) inventoryHandler(m message.Message) error {
 		app.RegisterAll(m.From())
 	}
 	return nil
+}
+
+func (app *App) handleFilteredCommand(m message.Message) error {
+	switch m := m.(type) {
+	case *message.Command:
+		// filter to only react on my devices
+		for _, device := range app.DeviceList() {
+			if uuid.Equal(m.Destination, device.ID) {
+				return app.handler[queue.Command](m)
+			}
+		}
+		// device not found, so if this was unicasted
+		// to us, we should reply
+		if uuid.Equal(m.For, app.ID) {
+			reply := &message.CommandReply{
+				Header: message.Header{
+					Source: app.ID,
+					For:    m.Source,
+				},
+				InReplyTo: m.ID,
+				Result:    message.CommandSyncFail,
+				Message:   "no such device found",
+			}
+			app.Publish(queue.Command, reply)
+		}
+		return fmt.Errorf("device not found %s", m.Destination)
+	}
+	return app.handler[queue.Command](m)
 }

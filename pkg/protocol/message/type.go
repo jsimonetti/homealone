@@ -14,4 +14,5 @@ const (
 	TypeInventoryReply
 	TypeCommand
 	TypeCommandReply
+	TypeEvent
 )

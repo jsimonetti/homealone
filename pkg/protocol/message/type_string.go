@@ -4,9 +4,9 @@ package message
 
 import "fmt"
 
-const _Type_name = "TypeDiscoverTypeRegisterTypeUnregisterTypeInventoryTypeInventoryReplyTypeCommandTypeCommandReply"
+const _Type_name = "TypeDiscoverTypeRegisterTypeUnregisterTypeInventoryTypeInventoryReplyTypeCommandTypeCommandReplyTypeEvent"
 
-var _Type_index = [...]uint8{0, 12, 24, 38, 51, 69, 80, 96}
+var _Type_index = [...]uint8{0, 12, 24, 38, 51, 69, 80, 96, 105}
 
 func (i Type) String() string {
 	if i >= Type(len(_Type_index)-1) {

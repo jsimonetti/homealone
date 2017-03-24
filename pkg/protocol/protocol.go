@@ -106,6 +106,11 @@ func decodeMessage(t message.Type, buf *bytes.Buffer) (m message.Message, err er
 		err = dec.Decode(&msg)
 		m = msg
 
+	case message.TypeEvent:
+		msg := &message.Event{}
+		err = dec.Decode(&msg)
+		m = msg
+
 	default:
 		return nil, fmt.Errorf("unknown messagetype found; type: %s", t.String())
 	}

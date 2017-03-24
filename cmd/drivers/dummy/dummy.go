@@ -5,6 +5,8 @@ import (
 
 	uuid "github.com/satori/go.uuid"
 
+	"time"
+
 	"github.com/jsimonetti/homealone/pkg/app"
 	"github.com/jsimonetti/homealone/pkg/protocol/device"
 	"github.com/jsimonetti/homealone/pkg/protocol/message"
@@ -26,7 +28,7 @@ func main() {
 		App: c,
 	}
 
-	app.Register(app.fakeDevice()...)
+	app.Register(app.fakeDevices()...)
 	app.SetHandler(queue.Command, app.commandHandler)
 	app.Start()
 
@@ -41,45 +43,74 @@ type DriverApp struct {
 	*app.App
 }
 
+func (app *DriverApp) fakeDevices() []device.Device {
+	devices := []device.Device{
+		device.Device{
+			ID:    uuid.NewV5(app.ID, "Lamp"),
+			Owner: app.ID,
+			Name:  "Lamp",
+			Components: []device.Component{
+				device.Toggle{
+					Name: "Power",
+				},
+				device.Slider{
+					Name: "Dimm",
+				},
+			},
+		},
+		device.Device{
+			ID:    uuid.NewV5(app.ID, "Radio"),
+			Owner: app.ID,
+			Name:  "Radio",
+			Components: []device.Component{
+				device.Toggle{
+					Name: "Power",
+				},
+				device.Rotary{
+					Name: "Volume",
+				},
+			},
+		},
+	}
+	return devices
+}
+
 // commandHandler is the handler to deal with all messages
 // from the command queue
 func (app *DriverApp) commandHandler(m message.Message) error {
 	switch m := m.(type) {
 	case *message.Command:
-		// filter to only react on my devices
-		for _, device := range app.DeviceList() {
-			if uuid.Equal(m.Destination, device.ID) {
-				result, msg := app.execute(device, m.Op)
-				reply := &message.CommandReply{
-					Header: message.Header{
-						Source: app.ID,
-						For:    m.Source,
-					},
-					InReplyTo: m.ID,
-					Result:    result,
-					Message:   msg,
-				}
-				app.Publish(queue.Command, reply)
-				return nil
-			}
+		result, msg := app.executeDeviceOp(m.Destination, m.Op)
+		reply := &message.CommandReply{
+			Header: message.Header{
+				Source: app.ID,
+				For:    m.Source,
+			},
+			InReplyTo: m.ID,
+			Result:    result,
+			Message:   msg,
 		}
-		// if this was unicasted to us, we should reply
-		if uuid.Equal(m.For, app.ID) {
-			reply := &message.CommandReply{
-				Header: message.Header{
-					Source: app.ID,
-					For:    m.Source,
-				},
-				InReplyTo: m.ID,
-				Result:    message.CommandSyncFail,
-				Message:   "no such device found",
-			}
-			app.Publish(queue.Command, reply)
-		}
+		app.Publish(queue.Command, reply)
+		return nil
 	}
 	return nil
 }
 
-func (app *DriverApp) execute(device device.Device, op string) (message.CommandResult, string) {
+func (app *DriverApp) executeDeviceOp(id uuid.UUID, op string) (message.CommandResult, string) {
+	go app.sendEvent(id, message.EventComponentValueChange, "change description")
 	return message.CommandSyncAck, ""
+}
+
+func (app *DriverApp) sendEvent(id uuid.UUID, etype message.EventType, msg string) {
+	time.Sleep(1 * time.Second)
+	event := &message.Event{
+		Header: message.Header{
+			Source: app.ID,
+		},
+		ID:        uuid.NewV4(),
+		SubjectID: id,
+		Event:     etype,
+		Message:   msg,
+	}
+	app.Publish(queue.Event, event)
 }
