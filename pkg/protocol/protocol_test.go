@@ -170,10 +170,10 @@ func testProtocolUnmarshal(t *testing.T) {
 	}
 }
 
+var _ protocol.Payload = &payload{}
+
 type payload struct{ b []byte }
 
-func (p *payload) Size() int                      { return len(p.b) }
-func (p *payload) ReadPayload(io.Reader) error    { return nil }
 func (p *payload) WritePayload(w io.Writer) error { _, err := w.Write(p.b); return err }
 
 func printByteSlice(b []byte) string {
