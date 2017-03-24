@@ -1,6 +1,7 @@
 package main
 
 import (
+	"math/rand"
 	"os"
 
 	uuid "github.com/satori/go.uuid"
@@ -98,7 +99,9 @@ func (app *DriverApp) commandHandler(m message.Message) error {
 
 func (app *DriverApp) executeDeviceOp(id uuid.UUID, op string) (message.CommandResult, string) {
 	go app.sendEvent(id, message.EventComponentValueChange, "change description")
-	return message.CommandSyncAck, ""
+
+	r := rand.Int() % 6
+	return message.CommandResult(r), message.CommandResult(r).String()
 }
 
 func (app *DriverApp) sendEvent(id uuid.UUID, etype message.EventType, msg string) {
