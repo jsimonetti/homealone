@@ -1,0 +1,22 @@
+syntax = "proto2";
+
+import "header.proto";
+
+package message;
+
+message Event {
+	required Header Header = 1;
+	required bytes ID = 2;
+	required bytes SubjectID = 3;
+	required EventType Event = 4;
+	optional string Message = 5;
+}
+
+// EventType is the type of the event.
+
+enum EventType {
+	DriverStateChange = 1;
+	DeviceStateChange = 2;
+	ComponentStateChange = 3;
+	ComponentValueChange = 4;
+};

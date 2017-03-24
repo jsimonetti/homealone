@@ -1,0 +1,15 @@
+syntax = "proto2";
+
+import "header.proto";
+import "device.proto";
+
+package message;
+
+message Inventory {
+	required Header Header = 1;
+}
+
+message InventoryReply {
+	required Header Header = 1;
+	repeated Device Devices = 3;
+}

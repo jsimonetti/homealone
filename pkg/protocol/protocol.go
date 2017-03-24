@@ -1,12 +1,11 @@
-// Package protocol defines the protocol used to talk to the hub
 package protocol
 
 import (
 	"bytes"
-	"encoding/gob"
 	"fmt"
 	"io"
 
+	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
 
 	"github.com/jsimonetti/homealone/pkg/protocol/message"
@@ -25,17 +24,16 @@ func (e protoError) Error() string { return string(e) }
 // Marshal will marshal a Message into bytes
 // The version and message type are prepended onto the binary data
 func Marshal(m message.Message) ([]byte, error) {
-	m.Finalize()
-	var buf bytes.Buffer
+	//m.Finalize()
+	m = finalizeMessage(m)
 
-	enc := gob.NewEncoder(&buf)
-	err := enc.Encode(m)
+	data, err := proto.Marshal(m)
 	if err != nil {
 		return nil, errors.Wrap(err, "marshal failed")
 	}
 
 	b := append(version[:], uint8(m.Type()))
-	return append(b, buf.Bytes()...), nil
+	return append(b, data...), nil
 }
 
 // Unmarshal will take the bytes from an mqtt.Payload and read them into a Buffer
@@ -61,65 +59,102 @@ func Unmarshal(p Payload) (m message.Message, err error) {
 	}
 
 	t := message.Type(b)
-	m, err = decodeMessage(t, buf)
+
+	m, err = decodeMessage(t, buf.Bytes())
 	return m, errors.Wrap(err, "decodeMessage failed")
 }
 
 // decodeMessage will decode the bytes from the buffer according to the type.
 // The remaining bytes on the buffer are decoded into the appropriate message.
-func decodeMessage(t message.Type, buf *bytes.Buffer) (m message.Message, err error) {
-	dec := gob.NewDecoder(buf)
+func decodeMessage(t message.Type, b []byte) (m message.Message, err error) {
 
 	switch t {
-	case message.TypeDiscover:
+	case message.Type_discover:
 		msg := &message.Discover{}
-		err = dec.Decode(&msg)
+		err = proto.Unmarshal(b, msg)
 		m = msg
 
-	case message.TypeRegister:
+	case message.Type_register:
 		msg := &message.Register{}
-		err = dec.Decode(&msg)
+		err = proto.Unmarshal(b, msg)
 		m = msg
 
-	case message.TypeUnregister:
+	case message.Type_unregister:
 		msg := &message.Unregister{}
-		err = dec.Decode(&msg)
+		err = proto.Unmarshal(b, msg)
 		m = msg
 
-	case message.TypeInventory:
+	case message.Type_inventory:
 		msg := &message.Inventory{}
-		err = dec.Decode(&msg)
+		err = proto.Unmarshal(b, msg)
 		m = msg
 
-	case message.TypeInventoryReply:
+	case message.Type_inventoryReply:
 		msg := &message.InventoryReply{}
-		err = dec.Decode(&msg)
+		err = proto.Unmarshal(b, msg)
 		m = msg
 
-	case message.TypeCommand:
+	case message.Type_command:
 		msg := &message.Command{}
-		err = dec.Decode(&msg)
+		err = proto.Unmarshal(b, msg)
 		m = msg
 
-	case message.TypeCommandReply:
+	case message.Type_commandReply:
 		msg := &message.CommandReply{}
-		err = dec.Decode(&msg)
+		err = proto.Unmarshal(b, msg)
 		m = msg
 
-	case message.TypeEvent:
+	case message.Type_event:
 		msg := &message.Event{}
-		err = dec.Decode(&msg)
+		err = proto.Unmarshal(b, msg)
 		m = msg
 
 	default:
 		return nil, fmt.Errorf("unknown messagetype found; type: %s", t.String())
 	}
 
-	return m, errors.Wrap(err, "gob.Decode failed")
+	return m, errors.Wrap(err, "proto.Decode failed")
 }
 
 // Payload is the interface for Publish payloads.
 type Payload interface {
 	// WritePayload writes the payload data to w.
 	WritePayload(w io.Writer) error
+}
+
+// decodeMessage will decode the bytes from the buffer according to the type.
+// The remaining bytes on the buffer are decoded into the appropriate message.
+func finalizeMessage(msg message.Message) (m message.Message) {
+
+	switch msg := msg.(type) {
+	case *message.Discover:
+		msg.Header.Mtype = message.Type_discover.Enum()
+
+	case *message.Register:
+		msg.Header.Mtype = message.Type_register.Enum()
+
+	case *message.Unregister:
+		msg.Header.Mtype = message.Type_unregister.Enum()
+
+	case *message.Inventory:
+		msg.Header.Mtype = message.Type_inventory.Enum()
+
+	case *message.InventoryReply:
+		msg.Header.Mtype = message.Type_inventoryReply.Enum()
+
+	case *message.Command:
+		msg.Header.Mtype = message.Type_command.Enum()
+
+	case *message.CommandReply:
+		msg.Header.Mtype = message.Type_commandReply.Enum()
+
+	case *message.Event:
+		msg.Header.Mtype = message.Type_event.Enum()
+
+	default:
+		return nil
+	}
+	m = msg
+
+	return m
 }

@@ -5,32 +5,25 @@ import uuid "github.com/satori/go.uuid"
 // Used to make sure the interface is met
 var _ Message = &Event{}
 
-// Event is a message used by any app to signal an event
-type Event struct {
-	Header
-	ID        uuid.UUID
-	SubjectID uuid.UUID
-	Event     EventType
-	Message   string
+func (m *Event) Type() Type {
+	return Type(m.Header.GetMtype())
+}
+
+func (m *Event) From() uuid.UUID {
+	id, _ := uuid.FromBytes(m.Header.GetMfrom())
+	return id
+}
+
+func (m *Event) To() uuid.UUID {
+	id, _ := uuid.FromBytes(m.Header.GetMto())
+	return id
 }
 
 // Finalize will finish the object before marshalling
 func (m *Event) Finalize() {
-	m.Header.MType = TypeEvent
+	t := Type_event
+	m.Header.Mtype = &t
 }
 
 // message is an empty method to comply to the interface Message
 func (Event) message() {}
-
-//go:generate stringer -type=EventType
-
-// EventType is the type of the event.
-type EventType uint8
-
-// These constants define the different event types.
-const (
-	EventDriverStateChange EventType = iota
-	EventDeviceStateChange
-	EventComponentStateChange
-	EventComponentValueChange
-)

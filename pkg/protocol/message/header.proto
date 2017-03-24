@@ -1,0 +1,11 @@
+syntax = "proto2";
+
+import "type.proto";
+
+package message;
+
+message Header {
+	required Type Mtype = 1;
+	required bytes Mfrom = 2;
+	optional bytes Mto = 3;
+}

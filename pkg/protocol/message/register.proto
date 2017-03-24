@@ -1,0 +1,18 @@
+syntax = "proto2";
+
+import "header.proto";
+import "device.proto";
+
+package message;
+
+message Register {
+	required Header Header = 1;
+	required string Name = 2;
+	repeated Device Devices = 3;
+}
+
+message Unregister {
+	required Header Header = 1;
+	required string Name = 2;
+	repeated Device Devices = 3;
+}

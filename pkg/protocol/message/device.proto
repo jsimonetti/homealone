@@ -1,0 +1,12 @@
+syntax = "proto2";
+
+import "components.proto";
+
+package message;
+
+message Device {
+    required bytes ID = 1;
+    required bytes Owner = 2;
+    required string Name = 3;
+    repeated Components Components = 4;
+}

@@ -1,0 +1,28 @@
+syntax = "proto2";
+
+package message;
+
+message Components {
+    oneof union {
+        Stat Stat = 1;
+        Toggle Toggle = 2;
+        Slider Slider = 3;
+        Rotary Rotary = 4;
+    }
+}
+
+message Stat {
+    required string Name = 1;
+}
+
+message Toggle {
+    required string Name = 1;
+}
+
+message Slider {
+    required string Name = 1;
+}
+
+message Rotary {
+    required string Name = 1;
+}

@@ -1,0 +1,44 @@
+syntax = "proto2";
+
+import "header.proto";
+
+package message;
+
+message Command {
+	required Header Header = 1;
+	required bytes ID = 2;
+	required bytes Destination = 3;
+	required string Component = 4;
+	required string Op = 5;
+}
+
+message CommandReply {
+	required Header Header = 1;
+	required bytes InReplyTo = 2;
+	required CommandResult Result = 3;
+	optional string Message = 4;
+}
+
+// CommandResult is used to signal the sending partner about the result
+// of this command
+
+enum CommandResult {
+	// CommandSyncAck is used to acknowledge receipt of the command and
+	// successful execution
+	SyncAck = 1;
+	// CommandSyncFail is used to acknowledge receipt of the command and
+	// unsuccessful execution
+	SyncFail = 2;
+	// CommandAsyncAck is used to acknowledge receipt of the command but
+	// immediate result is not available. The caller should monitor the
+	// command queue to wait for the async result
+	AsyncAck = 3;
+	// CommandAsyncFail is used to signal failure on an async command.
+	// Message should be consulted to see the reason.
+	AsyncFail = 4;
+	// CommandAsyncSuccess is used to signal success on an async command
+	AsyncSuccess = 5;
+	// CommandError is used to signal a failure with executing the command.
+	// Message should be consulted to see the reason.
+	Error = 6;
+};
