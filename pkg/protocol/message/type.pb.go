@@ -50,6 +50,7 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
+// Type is the type of the message. This is used for (un)marshalling.
 type Type int32
 
 const (

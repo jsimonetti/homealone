@@ -4,16 +4,16 @@ import "header.proto";
 
 package message;
 
+// Event is a message used by any app to signal an event
 message Event {
 	required Header Header = 1;
-	required bytes ID = 2;
-	required bytes SubjectID = 3;
+	required string ID = 2;
+	required string SubjectID = 3;
 	required EventType Event = 4;
 	optional string Message = 5;
 }
 
 // EventType is the type of the event.
-
 enum EventType {
 	DriverStateChange = 1;
 	DeviceStateChange = 2;

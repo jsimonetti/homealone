@@ -1,7 +1,6 @@
 package app
 
 import (
-	"bytes"
 	"flag"
 	"net"
 	"os"
@@ -46,7 +45,7 @@ type appDevice struct {
 // It takes away the burden of (un)registering devices at startup
 // and responding to discovery messages.
 type App struct {
-	ID   uuid.UUID
+	ID   string
 	Log  log.Logger
 	Name string
 
@@ -85,7 +84,7 @@ func NewCore(name string) (*App, error) {
 func newApp(name string) (app *App, err error) {
 	app = &App{
 		Name:           name,
-		ID:             uuid.NewV5(namespace, "org.homealone."+name),
+		ID:             uuid.NewV5(namespace, "org.homealone."+name).String(),
 		handler:        make(map[queue.Topic]message.Handler),
 		debug:          *debug,
 		filterMessages: true,
@@ -118,7 +117,7 @@ func (app *App) Start() (err error) {
 
 	app.Log.With(log.Fields{"client_id": app.Broker.ClientId}).Print("client started")
 
-	app.RegisterAll(uuid.Nil)
+	app.RegisterAll("")
 
 	app.shutdownCh = make(chan struct{})
 	go app.messageLoop()
@@ -132,7 +131,7 @@ func (app *App) Start() (err error) {
 // Stop will stop this app. It will stop the discovery goroutine,
 // disconnect from the message hub and close its connection.
 func (app *App) Stop() {
-	app.UnregisterAll(uuid.Nil)
+	app.UnregisterAll("")
 	close(app.shutdownCh)
 	app.wg.Wait()
 	app.Log.With(log.Fields{"client_id": app.Broker.ClientId}).Print("client stopped")
@@ -154,7 +153,7 @@ func (app *App) Publish(topic queue.Topic, m message.Message) {
 	}
 
 	if app.debug {
-		app.Log.With(log.Fields{"topic": topic.String(), "destination": m.To().String(), "source": m.From().String(), "type": m.Type().String()}).Print("sent message")
+		app.Log.With(log.Fields{"topic": topic.String(), "destination": m.To(), "source": m.From(), "type": m.Type().String()}).Print("sent message")
 	}
 
 	app.Broker.Publish(&proto.Publish{
@@ -175,7 +174,7 @@ func (app *App) Debug() bool {
 }
 
 // Register will set the devices controlled by this app.
-func (app *App) Register(devices ...message.Device) {
+func (app *App) Register(devices ...*message.Device) {
 	// we are registering devices, we should also register for
 	// discovery messages, but they are handled in the app.
 	// we add a NoopHandler to the map to make the subscription work
@@ -189,24 +188,24 @@ func (app *App) Register(devices ...message.Device) {
 	for _, device := range devices {
 		found := false
 		for _, d := range app.devices {
-			if bytes.Equal(device.ID, d.device.ID) {
+			if *device.ID == *d.device.ID {
 				d.lastSeen = time.Now()
 				found = true
 			}
 		}
 		if !found {
-			app.devices = append(app.devices, &appDevice{device: &device, lastSeen: time.Now()})
+			app.devices = append(app.devices, &appDevice{device: device, lastSeen: time.Now()})
 		}
 	}
 }
 
 // Unregister will remove the devices from this app.
-func (app *App) Unregister(devices ...message.Device) {
+func (app *App) Unregister(devices ...*message.Device) {
 	app.deviceLock.Lock()
 	defer app.deviceLock.Unlock()
 	for _, device := range devices {
 		for i, d := range app.devices {
-			if bytes.Equal(device.ID, d.device.ID) {
+			if *device.ID == *d.device.ID {
 				app.devices = append(app.devices[:i], app.devices[i+1:]...)
 			}
 		}
@@ -214,13 +213,13 @@ func (app *App) Unregister(devices ...message.Device) {
 }
 
 // RegisterAll will send the Register message to the inventory.
-func (app *App) RegisterAll(to uuid.UUID) {
+func (app *App) RegisterAll(to string) {
 	m := &message.Register{
 		Header: &message.Header{},
 	}
-	m.Header.Mfrom = app.ID.Bytes()
+	m.Header.From = &app.ID
 	m.Name = &app.Name
-	m.Header.Mto = to.Bytes()
+	m.Header.To = &to
 	m.Devices = app.DeviceList()
 
 	app.Publish(queue.Inventory, m)
@@ -228,13 +227,13 @@ func (app *App) RegisterAll(to uuid.UUID) {
 
 // UnregisterAll will unregister all devices from the inventory.
 // This is usually done on shutdown.
-func (app *App) UnregisterAll(to uuid.UUID) {
+func (app *App) UnregisterAll(to string) {
 	m := &message.Unregister{
 		Header: &message.Header{},
 	}
-	m.Header.Mfrom = app.ID.Bytes()
+	m.Header.From = &app.ID
 	m.Name = &app.Name
-	m.Header.Mto = to.Bytes()
+	m.Header.To = &to
 	m.Devices = app.DeviceList()
 
 	app.Publish(queue.Inventory, m)
@@ -268,7 +267,7 @@ func (app *App) messageLoop() {
 			}
 
 			if app.debug {
-				app.Log.With(log.Fields{"topic": m.TopicName, "destination": msg.To().String(), "source": msg.From().String(), "type": msg.Type().String()}).Print("received message")
+				app.Log.With(log.Fields{"topic": m.TopicName, "destination": msg.To(), "source": msg.From(), "type": msg.Type().String()}).Print("received message")
 			}
 
 			err = app.mHandler(queue.GetTopic(m.TopicName), msg)
@@ -306,7 +305,7 @@ start:
 // mHandler looks up the handler for the specified queue
 func (app *App) mHandler(topic queue.Topic, msg message.Message) error {
 	// only reply to broadcasts or msgs directed to me
-	if !app.filterMessages || msg.To() == uuid.Nil || uuid.Equal(msg.To(), app.ID) {
+	if !app.filterMessages || msg.To() == "" || msg.To() == app.ID {
 		//
 		if topic == queue.Command && app.filterMessages {
 			return app.handleFilteredCommand(msg)
@@ -336,18 +335,18 @@ func (app *App) handleFilteredCommand(m message.Message) error {
 	case *message.Command:
 		// filter to only react on my devices
 		for _, device := range app.DeviceList() {
-			if bytes.Equal(m.Destination, device.ID) {
+			if *m.Destination == *device.ID {
 				return app.handler[queue.Command](m)
 			}
 		}
 		// device not found, so if this was unicasted
 		// to us, we should reply
-		if uuid.Equal(m.To(), app.ID) {
+		if m.To() == app.ID {
 			msg := "no such device found"
 			reply := &message.CommandReply{
 				Header: &message.Header{
-					Mfrom: app.ID.Bytes(),
-					Mto:   m.From().Bytes(),
+					From: &app.ID,
+					To:   m.Header.From,
 				},
 				InReplyTo: m.ID,
 				Result:    message.CommandResult_Error.Enum(),
@@ -355,7 +354,7 @@ func (app *App) handleFilteredCommand(m message.Message) error {
 			}
 			app.Publish(queue.Command, reply)
 		}
-		return fmt.Errorf("device not found %s", m.Destination)
+		return fmt.Errorf("device not found %s", *m.Destination)
 	}
 	return app.handler[queue.Command](m)
 }

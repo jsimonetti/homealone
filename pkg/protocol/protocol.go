@@ -24,7 +24,6 @@ func (e protoError) Error() string { return string(e) }
 // Marshal will marshal a Message into bytes
 // The version and message type are prepended onto the binary data
 func Marshal(m message.Message) ([]byte, error) {
-	//m.Finalize()
 	m = finalizeMessage(m)
 
 	data, err := proto.Marshal(m)
@@ -128,28 +127,28 @@ func finalizeMessage(msg message.Message) (m message.Message) {
 
 	switch msg := msg.(type) {
 	case *message.Discover:
-		msg.Header.Mtype = message.Type_discover.Enum()
+		msg.Header.Type = message.Type_discover.Enum()
 
 	case *message.Register:
-		msg.Header.Mtype = message.Type_register.Enum()
+		msg.Header.Type = message.Type_register.Enum()
 
 	case *message.Unregister:
-		msg.Header.Mtype = message.Type_unregister.Enum()
+		msg.Header.Type = message.Type_unregister.Enum()
 
 	case *message.Inventory:
-		msg.Header.Mtype = message.Type_inventory.Enum()
+		msg.Header.Type = message.Type_inventory.Enum()
 
 	case *message.InventoryReply:
-		msg.Header.Mtype = message.Type_inventoryReply.Enum()
+		msg.Header.Type = message.Type_inventoryReply.Enum()
 
 	case *message.Command:
-		msg.Header.Mtype = message.Type_command.Enum()
+		msg.Header.Type = message.Type_command.Enum()
 
 	case *message.CommandReply:
-		msg.Header.Mtype = message.Type_commandReply.Enum()
+		msg.Header.Type = message.Type_commandReply.Enum()
 
 	case *message.Event:
-		msg.Header.Mtype = message.Type_event.Enum()
+		msg.Header.Type = message.Type_event.Enum()
 
 	default:
 		return nil

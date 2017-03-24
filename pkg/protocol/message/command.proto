@@ -4,24 +4,27 @@ import "header.proto";
 
 package message;
 
+// Command is used to send a command to a device on the network.
+// The destination is the device UUID
 message Command {
 	required Header Header = 1;
-	required bytes ID = 2;
-	required bytes Destination = 3;
+	required string ID = 2;
+	required string Destination = 3;
 	required string Component = 4;
 	required string Op = 5;
 }
 
+// CommandReply is sent in response to a Command.
+// It contains the result of a command and an optional message
 message CommandReply {
 	required Header Header = 1;
-	required bytes InReplyTo = 2;
+	required string InReplyTo = 2;
 	required CommandResult Result = 3;
 	optional string Message = 4;
 }
 
 // CommandResult is used to signal the sending partner about the result
 // of this command
-
 enum CommandResult {
 	// CommandSyncAck is used to acknowledge receipt of the command and
 	// successful execution

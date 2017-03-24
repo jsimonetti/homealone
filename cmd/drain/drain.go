@@ -1,9 +1,10 @@
 package main
 
 import (
+	"fmt"
 	"os"
+	"time"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/jsimonetti/homealone/pkg/app"
 	"github.com/jsimonetti/homealone/pkg/protocol/message"
 	"github.com/jsimonetti/homealone/pkg/protocol/queue"
@@ -33,31 +34,6 @@ func main() {
 
 // dumpHandler is the handler to deal with all messages
 func dumpHandler(m message.Message) error {
-	switch m := m.(type) {
-	case *message.Discover:
-		spew.Dump(m)
-
-	case *message.Register:
-		spew.Dump(m)
-
-	case *message.Unregister:
-		spew.Dump(m)
-
-	case *message.Inventory:
-		spew.Dump(m)
-
-	case *message.InventoryReply:
-		spew.Dump(m)
-
-	case *message.Command:
-		spew.Dump(m)
-
-	case *message.CommandReply:
-		spew.Dump(m)
-
-	case *message.Event:
-		spew.Dump(m)
-	}
-
+	fmt.Printf("%s:  %s\n", time.Now(), m.String())
 	return nil
 }

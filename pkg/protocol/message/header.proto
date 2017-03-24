@@ -4,8 +4,10 @@ import "type.proto";
 
 package message;
 
+// Header is the header of a message. It contains the message type and
+// the source of the message.
 message Header {
-	required Type Mtype = 1;
-	required bytes Mfrom = 2;
-	optional bytes Mto = 3;
+	required Type Type = 1;
+	required string From = 2;
+	optional string To = 3;
 }

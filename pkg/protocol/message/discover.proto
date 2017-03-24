@@ -4,6 +4,10 @@ import "header.proto";
 
 package message;
 
+
+// Discover is a message used by the inventory to discover
+// all available devices in the network.
+// Drivers should respond with a Register message directed to the source
 message Discover {
 	required Header Header = 1;
 }

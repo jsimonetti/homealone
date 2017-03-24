@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/jsimonetti/homealone/pkg/app"
-	"github.com/jsimonetti/homealone/pkg/protocol/device"
 	"github.com/jsimonetti/homealone/pkg/protocol/message"
 	"github.com/jsimonetti/homealone/pkg/protocol/queue"
 )
@@ -44,33 +43,23 @@ type DriverApp struct {
 	*app.App
 }
 
-func (app *DriverApp) fakeDevices() []device.Device {
-	devices := []device.Device{
-		device.Device{
-			ID:    uuid.NewV5(app.ID, "Lamp"),
-			Owner: app.ID,
-			Name:  "Lamp",
-			Components: []device.Component{
-				device.Toggle{
-					Name: "Power",
-				},
-				device.Slider{
-					Name: "Dimm",
-				},
-			},
+func (app *DriverApp) fakeDevices() []*message.Device {
+	baseuuid, _ := uuid.FromString(app.ID)
+	name1 := "Lamp"
+	id1 := uuid.NewV5(baseuuid, "Lamp").String()
+	name2 := "Radio"
+	id2 := uuid.NewV5(baseuuid, "Radio").String()
+
+	devices := []*message.Device{
+		&message.Device{
+			ID:    &id1,
+			Owner: &app.ID,
+			Name:  &name1,
 		},
-		device.Device{
-			ID:    uuid.NewV5(app.ID, "Radio"),
-			Owner: app.ID,
-			Name:  "Radio",
-			Components: []device.Component{
-				device.Toggle{
-					Name: "Power",
-				},
-				device.Rotary{
-					Name: "Volume",
-				},
-			},
+		&message.Device{
+			ID:    &id2,
+			Owner: &app.ID,
+			Name:  &name2,
 		},
 	}
 	return devices
@@ -81,15 +70,15 @@ func (app *DriverApp) fakeDevices() []device.Device {
 func (app *DriverApp) commandHandler(m message.Message) error {
 	switch m := m.(type) {
 	case *message.Command:
-		result, msg := app.executeDeviceOp(m.Destination, m.Op)
+		result, msg := app.executeDeviceOp(*m.Destination, *m.Op)
 		reply := &message.CommandReply{
-			Header: message.Header{
-				Source: app.ID,
-				For:    m.Source,
+			Header: &message.Header{
+				From: &app.ID,
+				To:   m.Header.From,
 			},
 			InReplyTo: m.ID,
-			Result:    result,
-			Message:   msg,
+			Result:    &result,
+			Message:   &msg,
 		}
 		app.Publish(queue.Command, reply)
 		return nil
@@ -97,23 +86,24 @@ func (app *DriverApp) commandHandler(m message.Message) error {
 	return nil
 }
 
-func (app *DriverApp) executeDeviceOp(id uuid.UUID, op string) (message.CommandResult, string) {
-	go app.sendEvent(id, message.EventComponentValueChange, "change description")
+func (app *DriverApp) executeDeviceOp(id, op string) (message.CommandResult, string) {
+	go app.sendEvent(id, message.EventType_ComponentValueChange, "change description")
 
 	r := rand.Int() % 6
 	return message.CommandResult(r), message.CommandResult(r).String()
 }
 
-func (app *DriverApp) sendEvent(id uuid.UUID, etype message.EventType, msg string) {
+func (app *DriverApp) sendEvent(id string, etype message.EventType, msg string) {
 	time.Sleep(1 * time.Second)
+	cmdid := uuid.NewV4().String()
 	event := &message.Event{
-		Header: message.Header{
-			Source: app.ID,
+		Header: &message.Header{
+			From: &app.ID,
 		},
-		ID:        uuid.NewV4(),
-		SubjectID: id,
-		Event:     etype,
-		Message:   msg,
+		ID:        &cmdid,
+		SubjectID: &id,
+		Event:     &etype,
+		Message:   &msg,
 	}
 	app.Publish(queue.Event, event)
 }

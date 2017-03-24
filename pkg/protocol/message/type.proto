@@ -2,6 +2,7 @@ syntax = "proto2";
 
 package message;
 
+// Type is the type of the message. This is used for (un)marshalling.
 enum Type {
 	// TypeDiscover is sent by the inventory app to discover all devices.
 	// Drivers should respond to this using a Register message.

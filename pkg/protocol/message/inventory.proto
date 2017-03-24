@@ -5,10 +5,15 @@ import "device.proto";
 
 package message;
 
+// Inventory will ask for an inventory of devices.
+// It is broadcasted across the network
 message Inventory {
 	required Header Header = 1;
 }
 
+// InventoryReply is a reply to an inventory request.
+// It is unicasted to the requester and holds all
+// devices currently in the inventory
 message InventoryReply {
 	required Header Header = 1;
 	repeated Device Devices = 3;
