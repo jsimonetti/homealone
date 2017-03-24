@@ -319,7 +319,7 @@ func (app *App) mHandler(topic queue.Topic, msg message.Message) error {
 		}
 
 	}
-	return fmt.Errorf("no handler found")
+	return fmt.Errorf("no handler found: %s", msg.Type())
 }
 
 // inventoryHandler is a function that noops for a specific message

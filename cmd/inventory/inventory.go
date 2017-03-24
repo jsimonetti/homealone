@@ -6,8 +6,6 @@ import (
 	"sync"
 	"time"
 
-	uuid "github.com/satori/go.uuid"
-
 	"github.com/jsimonetti/homealone/pkg/app"
 	"github.com/jsimonetti/homealone/pkg/protocol/message"
 	"github.com/jsimonetti/homealone/pkg/protocol/queue"
@@ -60,8 +58,11 @@ type InventoryApp struct {
 // Start will start the inventory app
 func (app *InventoryApp) Start() {
 	app.App.Start()
-	m := &message.Discover{}
-	m.Source = app.ID
+	m := &message.Discover{
+		Header: &message.Header{
+			From: &app.ID,
+		},
+	}
 	app.Publish(queue.Inventory, m)
 
 	app.shutdownCh = make(chan struct{})
@@ -73,8 +74,11 @@ func (app *InventoryApp) discoverLoop() {
 	app.wg.Add(1)
 	timer := time.NewTicker(app.discoverInterval)
 
-	m := &message.Discover{}
-	m.Source = app.ID
+	m := &message.Discover{
+		Header: &message.Header{
+			From: &app.ID,
+		},
+	}
 
 	for {
 		select {
@@ -90,10 +94,13 @@ func (app *InventoryApp) discoverLoop() {
 }
 
 // inventoryReply will send the inventory of devices to the requester
-func (app *InventoryApp) inventoryReply(to uuid.UUID) error {
-	m := &message.InventoryReply{}
-	m.Source = app.ID
-	m.For = to
+func (app *InventoryApp) inventoryReply(to string) error {
+	m := &message.InventoryReply{
+		Header: &message.Header{
+			From: &app.ID,
+			To:   &to,
+		},
+	}
 	m.Devices = app.DeviceList()
 
 	app.Publish(queue.Inventory, m)

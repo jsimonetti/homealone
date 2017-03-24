@@ -55,8 +55,11 @@ type ListInventoryApp struct {
 // Start will start the inventory app
 func (app *ListInventoryApp) Start() {
 	app.App.Start()
-	m := &message.Inventory{}
-	m.Source = app.ID
+	m := &message.Inventory{
+		Header: &message.Header{
+			From: &app.ID,
+		},
+	}
 	app.Publish(queue.Inventory, m)
 
 	app.shutdownCh = make(chan struct{})
@@ -67,8 +70,11 @@ func (app *ListInventoryApp) inventoryLoop() {
 	app.wg.Add(1)
 	timer := time.NewTicker(app.inventoryInterval)
 
-	m := &message.Inventory{}
-	m.Source = app.ID
+	m := &message.Inventory{
+		Header: &message.Header{
+			From: &app.ID,
+		},
+	}
 
 	for {
 		select {
