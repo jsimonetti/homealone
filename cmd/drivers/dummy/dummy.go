@@ -49,17 +49,52 @@ func (app *DriverApp) fakeDevices() []*message.Device {
 	id1 := uuid.NewV5(baseuuid, "Lamp").String()
 	name2 := "Radio"
 	id2 := uuid.NewV5(baseuuid, "Radio").String()
+	comp1 := "Dimmer"
+	comp2 := "Power"
+	comp3 := "Volume"
 
 	devices := []*message.Device{
 		&message.Device{
 			ID:    &id1,
 			Owner: &app.ID,
 			Name:  &name1,
+			Components: []*message.Component{
+				&message.Component{
+					Union: &message.Component_Slider{
+						Slider: &message.Slider{
+							Name: &comp1,
+						},
+					},
+				},
+				&message.Component{
+					Union: &message.Component_Toggle{
+						Toggle: &message.Toggle{
+							Name: &comp2,
+						},
+					},
+				},
+			},
 		},
 		&message.Device{
 			ID:    &id2,
 			Owner: &app.ID,
 			Name:  &name2,
+			Components: []*message.Component{
+				&message.Component{
+					Union: &message.Component_Slider{
+						Slider: &message.Slider{
+							Name: &comp3,
+						},
+					},
+				},
+				&message.Component{
+					Union: &message.Component_Toggle{
+						Toggle: &message.Toggle{
+							Name: &comp2,
+						},
+					},
+				},
+			},
 		},
 	}
 	return devices

@@ -1,11 +1,11 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"sync"
 	"time"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/jsimonetti/homealone/pkg/app"
 	"github.com/jsimonetti/homealone/pkg/protocol/message"
 	"github.com/jsimonetti/homealone/pkg/protocol/queue"
@@ -93,7 +93,7 @@ func (app *ListInventoryApp) inventoryLoop() {
 func inventoryHandler(m message.Message) error {
 	switch m := m.(type) {
 	case *message.InventoryReply:
-		spew.Dump(m)
+		fmt.Printf("%s:  %s\n", time.Now(), m.String())
 	}
 	return nil
 }

@@ -13,5 +13,5 @@ message Device {
     required string ID = 1;
     required string Owner = 2;
     required string Name = 3;
-    repeated Components Components = 4;
+    repeated Component Components = 4;
 }

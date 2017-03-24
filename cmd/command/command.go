@@ -5,7 +5,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/davecgh/go-spew/spew"
 	uuid "github.com/satori/go.uuid"
 
 	"github.com/jsimonetti/homealone/pkg/app"
@@ -62,8 +61,7 @@ type CommandApp struct {
 
 // commandHandler is the handler to deal with all messages
 func commandHandler(m message.Message) error {
-	fmt.Printf("%s\t", time.Now())
-	spew.Dump(m)
+	fmt.Printf("%s:  %s\n", time.Now(), m.String())
 	return nil
 }
 

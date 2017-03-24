@@ -3,7 +3,7 @@ syntax = "proto2";
 package message;
 
 // Component is an interface to device components
-message Components {
+message Component {
     oneof union {
         Stat Stat = 1;
         Toggle Toggle = 2;

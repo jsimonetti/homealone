@@ -25,7 +25,7 @@ It has these top-level messages:
 	Register
 	Unregister
 	Device
-	Components
+	Component
 	Stat
 	Toggle
 	Slider
