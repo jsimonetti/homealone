@@ -44,60 +44,15 @@ type DriverApp struct {
 }
 
 func (app *DriverApp) fakeDevices() []*message.Device {
-	baseuuid, _ := uuid.FromString(app.ID)
-	name1 := "Lamp"
-	id1 := uuid.NewV5(baseuuid, "Lamp").String()
-	name2 := "Radio"
-	id2 := uuid.NewV5(baseuuid, "Radio").String()
-	comp1 := "Dimmer"
-	comp2 := "Power"
-	comp3 := "Volume"
+	d1 := app.NewDevice("Lamp")
+	d1.AddSlider("Dimmer")
+	d1.AddToggle("Power")
 
-	devices := []*message.Device{
-		&message.Device{
-			ID:    &id1,
-			Owner: &app.ID,
-			Name:  &name1,
-			Components: []*message.Component{
-				&message.Component{
-					Union: &message.Component_Slider{
-						Slider: &message.Slider{
-							Name: &comp1,
-						},
-					},
-				},
-				&message.Component{
-					Union: &message.Component_Toggle{
-						Toggle: &message.Toggle{
-							Name: &comp2,
-						},
-					},
-				},
-			},
-		},
-		&message.Device{
-			ID:    &id2,
-			Owner: &app.ID,
-			Name:  &name2,
-			Components: []*message.Component{
-				&message.Component{
-					Union: &message.Component_Slider{
-						Slider: &message.Slider{
-							Name: &comp3,
-						},
-					},
-				},
-				&message.Component{
-					Union: &message.Component_Toggle{
-						Toggle: &message.Toggle{
-							Name: &comp2,
-						},
-					},
-				},
-			},
-		},
-	}
-	return devices
+	d2 := app.NewDevice("Radio")
+	d1.AddSlider("Volume")
+	d1.AddToggle("Power")
+
+	return []*message.Device{d1, d2}
 }
 
 // commandHandler is the handler to deal with all messages
@@ -105,7 +60,7 @@ func (app *DriverApp) fakeDevices() []*message.Device {
 func (app *DriverApp) commandHandler(m message.Message) error {
 	switch m := m.(type) {
 	case *message.Command:
-		result, msg := app.executeDeviceOp(*m.Destination, *m.Op)
+		result, msg := app.executeDeviceOp(*m.Destination, *m.Component, *m.Op, m.Parameters)
 		reply := &message.CommandReply{
 			Header: &message.Header{
 				From: &app.ID,
@@ -121,8 +76,12 @@ func (app *DriverApp) commandHandler(m message.Message) error {
 	return nil
 }
 
-func (app *DriverApp) executeDeviceOp(id, op string) (message.CommandResult, string) {
-	go app.sendEvent(id, message.EventType_ComponentValueChange, "change description")
+func (app *DriverApp) executeDeviceOp(id, component, op string, parameters *string) (message.CommandResult, string) {
+	if parameters != nil {
+		go app.sendEvent(id, message.EventType_ComponentValueChange, component+": changed "+op+"("+*parameters+")")
+	} else {
+		go app.sendEvent(id, message.EventType_ComponentValueChange, component+": changed "+op+"()")
+	}
 
 	r := rand.Int() % 6
 	return message.CommandResult(r), message.CommandResult(r).String()

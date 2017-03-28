@@ -12,6 +12,7 @@ message Command {
 	required string Destination = 3;
 	required string Component = 4;
 	required string Op = 5;
+	optional string Parameters = 6;
 }
 
 // CommandReply is sent in response to a Command.

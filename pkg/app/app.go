@@ -358,3 +358,20 @@ func (app *App) handleFilteredCommand(m message.Message) error {
 	}
 	return app.handler[queue.Command](m)
 }
+
+// NewDevice returns a new Device with the given name.
+func (app *App) NewDevice(name string) *message.Device {
+	if len(name) < 4 {
+		return nil
+	}
+
+	baseuuid, _ := uuid.FromString(app.ID)
+	id := uuid.NewV5(baseuuid, name).String()
+
+	d := &message.Device{
+		ID:    &id,
+		Owner: &app.ID,
+		Name:  &name,
+	}
+	return d
+}
