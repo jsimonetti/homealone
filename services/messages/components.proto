@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+package message;
+
+// Component is an interface to device components
+message Component {
+    oneof union {
+        Stat Stat = 1;
+        Toggle Toggle = 2;
+        Slider Slider = 3;
+        Rotary Rotary = 4;
+    }
+}
+
+// Stat is a statistic and can be any value you desire
+message Stat {
+    string Name = 1;
+}
+
+// Toggle is a simple binary toggle
+message Toggle {
+    string Name = 1;
+}
+
+// Slider is a simple slider with min and max values
+message Slider {
+    string Name = 1;
+}
+
+// Rotary is a rotaryencoder
+message Rotary {
+    string Name = 1;
+}

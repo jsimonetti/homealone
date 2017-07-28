@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package message;
+
+service Driver {
+	rpc Execute(DriverCommand) returns (CommandResult) {}
+}
+
+message DriverCommand {
+    string Device = 1;
+}
+
+message CommandResult {
+    string Result = 1;
+}

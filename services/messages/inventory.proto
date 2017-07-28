@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+import "device.proto";
+
+package message;
+
+service Inventory {
+	rpc List(InventoryRequest) returns (InventoryResponse) {}
+	rpc Register(RegisterRequest) returns (RegisterResponse) {}
+}
+
+message InventoryRequest {
+}
+
+message InventoryResponse {
+	map<string, Devices> Devices = 1;
+}
+
+message RegisterRequest {
+	repeated Device Devices = 2;
+}
+
+message RegisterResponse {
+}
